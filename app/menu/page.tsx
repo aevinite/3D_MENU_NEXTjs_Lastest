@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import FoodCard from "@/components/FoodCard";
 import { modelLoader } from "@/lib/modelLoader";
+import { getMenuItems } from "@/lib/menu";
 import { useTranslation } from "@/lib/i18n";
 
 const CAT_META = [
@@ -57,9 +58,8 @@ export default function MenuPage() {
   const categories = CAT_META.map((c) => ({ ...c, name: catNameMap[c.id] || c.id }));
 
   useEffect(() => {
-    fetch("/content/menu.json")
-      .then((res) => res.json())
-      .then((data) => setMenuData(data.items))
+    getMenuItems()
+      .then((items) => setMenuData(items))
       .catch((err) => console.error("Error loading menu data:", err));
   }, []);
 

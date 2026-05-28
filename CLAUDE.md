@@ -27,10 +27,19 @@ memory for tone and preferences.
   `lfh:toast`.
 - Persistence: `localStorage` keys `lfh_cart`, `lfh-favorites`; session theme
   in `lfh_theme_session` (read-side currently broken — see bug B2).
+- Menu data: `lib/menu.ts` — `getMenuItems()` / `getMenuItem(slug)` read the
+  `menu_items` table from Supabase via the ANON key (`lib/supabase.ts`), mapping
+  snake_case columns to camelCase. `/menu` and `/item/[slug]` use this; the old
+  `public/content/menu.json` is the seed source only, no longer fetched at runtime.
+  Re-seed with `node scripts/seed-supabase.mjs` (runs the migration + upserts all
+  items via the service role, then verifies an anon read). Secrets all live in
+  `.env.local` (gitignored): anon key, service-role key, and `SUPABASE_ACCESS_TOKEN`
+  (the Management-API PAT used for DDL).
 
 ## Routes
 
-- `/` — homepage menu (`app/page.tsx`). DUPLICATE of `/menu`, missing the model preloader.
+- `/` — `app/page.tsx` is now just `redirect("/menu")`. NOT a duplicate anymore;
+  nothing to mirror.
 - `/menu` — menu with 3D preload (`app/menu/page.tsx`).
 - `/item/[slug]` — dish detail.
 - `/view/[folder]` — 3D viewer.
@@ -63,14 +72,19 @@ via `ToolSearch` BEFORE planning around it.
 
 - **Supabase HEAD lies about Cache-Control.** Use GET with `Range: bytes=0-0`
   for header checks. `scripts/set-glb-cache.mjs` has this bug.
-- **`/` and `/menu` are near-duplicate files.** Any menu UI change must be
-  mirrored in both until they're merged.
+- **`/` is now just a redirect to `/menu`** (not a duplicate). No mirroring needed.
 - **`Header.tsx` force-resets theme to dark on mount.** Light-mode CSS is
   currently unreachable from the UI.
 - **Don't re-suggest Draco compression.** Already done. See model-pipeline memory.
 - **GSAP appears twice in the page** — once npm-imported, once CDN-loaded. Pick one.
 - **Service-role Supabase keys must never be committed or echoed.** If the user
   pastes one in chat, warn them loudly and treat it as compromised.
+- **MCP servers are NOT read from `.claude/settings.json`.** Claude Code loads
+  them from `~/.claude.json` (via `claude mcp add ... -s local`) or a root
+  `.mcp.json`. The supabase MCP is registered in `~/.claude.json` and uses
+  `@supabase/mcp-server-supabase` v0.8.1, whose flags are `--access-token` (PAT)
+  + `--project-ref` — NOT `--supabase-url`/`--supabase-key`. Any MCP config change
+  needs a full Claude Code restart to take effect.
 
 ## Definition of done for code changes
 

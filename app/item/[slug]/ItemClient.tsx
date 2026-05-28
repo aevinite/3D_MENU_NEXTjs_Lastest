@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import StarRating from "@/components/StarRating";
 import InfinityLoader from "@/components/InfinityLoader";
 import { modelLoader } from "@/lib/modelLoader";
+import { getMenuItems } from "@/lib/menu";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n";
 import VegIcon from "@/components/VegIcon";
@@ -188,19 +189,12 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
   const goToMenu = () => router.push("/menu");
 
   useEffect(() => {
-    fetch("/content/menu.json")
-      .then((res) => res.json())
-      .then((data) => {
-        const items = Array.isArray(data) ? data : data.items || [];
+    getMenuItems()
+      .then((items) => {
         const normalizedSlug = (slug || "").toLowerCase();
-
-        const found = items.find((item: any) => {
-          const itemSlug =
-            item.slug ||
-            item.title?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-
-          return itemSlug?.toLowerCase() === normalizedSlug;
-        });
+        const found = items.find(
+          (it) => it.slug?.toLowerCase() === normalizedSlug
+        );
 
         setAllItems(items);
         setItem(found || null);
