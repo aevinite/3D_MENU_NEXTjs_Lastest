@@ -1,0 +1,207 @@
+{
+  "items": [
+    {
+      "id": "burger",
+      "slug": "gourmet-burger",
+      "title": "Gourmet Burger",
+      "price": "12.99",
+      "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop",
+      "category": "burgers",
+      "veg": false,
+      "is4d": true,
+      "modelFolder": "MP",
+      "modelSmallUrl": "https://cstpqxvsurtzrwwjzyoj.supabase.co/storage/v1/object/public/Models/croissant/croissant_small.glb",
+      "modelOptimizedUrl": "https://cstpqxvsurtzrwwjzyoj.supabase.co/storage/v1/object/public/Models/croissant/croissant-optimized.glb",
+      "description": "Juicy grass-fed beef patty on toasted brioche bun",
+      "longDescription": "Our signature Gourmet Burger features a juicy grass-fed beef patty, aged cheddar, caramelized onions, and house special sauce on a toasted brioche bun. Served with crispy fries.",
+      "rating": "4.8",
+      "time": "25-30 min",
+      "nutrition": {
+        "calories": "650",
+        "protein": "35g",
+        "carbs": "48g"
+      },
+      "ingredients": [
+        { "emoji": "🍞", "name": "Brioche Bun" },
+        { "emoji": "🥩", "name": "Beef Patty" },
+        { "emoji": "🧀", "name": "Cheddar Cheese" },
+        { "emoji": "🥬", "name": "Lettuce" },
+        { "emoji": "🍅", "name": "Tomato" },
+        { "emoji": "🧅", "name": "Caramelized Onion" }
+      ],
+      "reviews": [
+        { "name": "Aarav", "rating": 5, "text": "Absolutely delicious! The patty was perfectly juicy and the bun was amazing." },
+        { "name": "Priya", "rating": 4, "text": "Great burger, really flavorful. Fries were crispy too!" },
+        { "name": "John", "rating": 5, "text": "Best burger I've had in a long time!" }
+      ],
+      "relatedSlugs": ["margherita-pizza", "street-tacos"]
+    },
+    {
+      "id": "pizza",
+      "slug": "margherita-pizza",
+      "title": "Margherita Pizza",
+      "price": "14.99",
+      "image": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop",
+      "category": "pizza",
+      "veg": true,
+      "is4d": true,
+      "modelFolder": "MP",
+      "modelSmallUrl": "https://cstpqxvsurtzrwwjzyoj.supabase.co/storage/v1/object/public/Models/croissant/croissant_small.glb",
+      "modelOptimizedUrl": "https://cstpqxvsurtzrwwjzyoj.supabase.co/storage/v1/object/public/Models/croissant/croissant-optimized.glb",
+      "description": "Classic Neapolitan-style pizza",
+      "longDescription": "Classic Neapolitan-style Margherita pizza with San Marzano tomatoes, fresh mozzarella, basil, and extra virgin olive oil. Baked to perfection in a wood-fired oven.",
+      "rating": "4.9",
+      "time": "20-25 min",
+      "nutrition": {
+        "calories": "580",
+        "protein": "28g",
+        "carbs": "62g"
+      },
+      "ingredients": [
+        { "emoji": "🍕", "name": "Pizza Dough" },
+        { "emoji": "🍅", "name": "Tomato Sauce" },
+        { "emoji": "🧀", "name": "Fresh Mozzarella" },
+        { "emoji": "🌿", "name": "Basil" },
+        { "emoji": "🫒", "name": "Olive Oil" }
+      ],
+      "reviews": [
+        { "name": "Maria", "rating": 5, "text": "Authentic Italian flavors! The crust was perfectly charred." },
+        { "name": "David", "rating": 5, "text": "Best pizza in town! Fresh and delicious every time." },
+        { "name": "Sophie", "rating": 4, "text": "Great pizza, though a bit pricey." }
+      ],
+      "relatedSlugs": ["gourmet-burger", "caesar-salad"]
+    },
+    {
+      "id": "sushi",
+      "slug": "sushi-platter",
+      "title": "Sushi Platter",
+      "price": "18.99",
+      "image": "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&h=400&fit=crop",
+      "category": "sushi",
+      "veg": false,
+      "is4d": true,
+      "modelFolder": "MP",
+      "modelSmallUrl": "https://cstpqxvsurtzrwwjzyoj.supabase.co/storage/v1/object/public/Models/croissant/croissant_small.glb",
+      "modelOptimizedUrl": "https://cstpqxvsurtzrwwjzyoj.supabase.co/storage/v1/object/public/Models/croissant/croissant-optimized.glb",
+      "description": "Premium fresh sushi selection",
+      "longDescription": "Premium sushi platter featuring fresh nigiri, sashimi, and signature rolls prepared with the finest daily catch. Served with wasabi, soy sauce, and pickled ginger.",
+      "rating": "4.7",
+      "time": "15-20 min",
+      "nutrition": {
+        "calories": "420",
+        "protein": "42g",
+        "carbs": "38g"
+      },
+      "ingredients": [
+        { "emoji": "🍚", "name": "Sushi Rice" },
+        { "emoji": "🍣", "name": "Salmon" },
+        { "emoji": "🐟", "name": "Tuna" },
+        { "emoji": "🥑", "name": "Avocado" },
+        { "emoji": "🥒", "name": "Cucumber" },
+        { "emoji": "🫒", "name": "Nori" }
+      ],
+      "reviews": [
+        { "name": "Yuki", "rating": 5, "text": "So fresh! The salmon melted in my mouth." },
+        { "name": "Mike", "rating": 4, "text": "Great selection and presentation." },
+        { "name": "Lisa", "rating": 5, "text": "Best sushi platter I've had!" }
+      ],
+      "relatedSlugs": ["caesar-salad", "carbonara-pasta"]
+    },
+    {
+      "id": "pasta",
+      "slug": "carbonara-pasta",
+      "title": "Carbonara Pasta",
+      "price": "11.99",
+      "image": "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=400&fit=crop",
+      "category": "pasta",
+      "veg": false,
+      "is4d": false,
+      "description": "Authentic Roman carbonara",
+      "longDescription": "Authentic Roman carbonara with guanciale, pecorino Romano, fresh eggs, and black pepper—no cream, just tradition. Simple, creamy, and absolutely delicious.",
+      "rating": "4.6",
+      "time": "18-22 min",
+      "nutrition": {
+        "calories": "720",
+        "protein": "32g",
+        "carbs": "58g"
+      },
+      "ingredients": [
+        { "emoji": "🍝", "name": "Spaghetti" },
+        { "emoji": "🥓", "name": "Guanciale" },
+        { "emoji": "🧀", "name": "Pecorino" },
+        { "emoji": "🥚", "name": "Egg Yolk" },
+        { "emoji": "🌶️", "name": "Black Pepper" }
+      ],
+      "reviews": [
+        { "name": "Marco", "rating": 5, "text": "Authentic! Just like in Rome—no cream!" },
+        { "name": "Anna", "rating": 4, "text": "Rich and flavorful, perfect portion size." },
+        { "name": "Tom", "rating": 5, "text": "Best carbonara I've had outside Italy!" }
+      ],
+      "relatedSlugs": ["margherita-pizza", "street-tacos"]
+    },
+    {
+      "id": "salad",
+      "slug": "caesar-salad",
+      "title": "Caesar Salad",
+      "price": "9.99",
+      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=400&fit=crop",
+      "category": "salads",
+      "veg": true,
+      "is4d": false,
+      "description": "Classic fresh Caesar salad",
+      "longDescription": "Fresh romaine lettuce tossed in our house Caesar dressing, topped with parmesan shavings and homemade croutons. Crisp, tangy, and absolutely refreshing.",
+      "rating": "4.5",
+      "time": "10-15 min",
+      "nutrition": {
+        "calories": "320",
+        "protein": "12g",
+        "carbs": "22g"
+      },
+      "ingredients": [
+        { "emoji": "🥬", "name": "Romaine Lettuce" },
+        { "emoji": "🧀", "name": "Parmesan" },
+        { "emoji": "🍞", "name": "Croutons" },
+        { "emoji": "🍋", "name": "Lemon" }
+      ],
+      "reviews": [
+        { "name": "Emma", "rating": 4, "text": "Fresh and crispy, dressing was perfect." },
+        { "name": "Jake", "rating": 5, "text": "Best Caesar salad I've ever had!" },
+        { "name": "Nina", "rating": 4, "text": "Good portion, very fresh ingredients." }
+      ],
+      "relatedSlugs": ["sushi-platter", "gourmet-burger"]
+    },
+    {
+      "id": "taco",
+      "slug": "street-tacos",
+      "title": "Street Tacos",
+      "price": "10.99",
+      "image": "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=400&h=400&fit=crop",
+      "category": "burgers",
+      "veg": false,
+      "is4d": false,
+      "description": "Authentic street-style tacos",
+      "longDescription": "Three authentic street-style tacos with grilled carne asada, cilantro, onions, and fresh lime on corn tortillas. Served with our house salsa.",
+      "rating": "4.7",
+      "time": "12-18 min",
+      "nutrition": {
+        "calories": "560",
+        "protein": "38g",
+        "carbs": "44g"
+      },
+      "ingredients": [
+        { "emoji": "🌮", "name": "Corn Tortillas" },
+        { "emoji": "🥩", "name": "Grilled Carne Asada" },
+        { "emoji": "🧅", "name": "Onion" },
+        { "emoji": "🌿", "name": "Cilantro" },
+        { "emoji": "🍋", "name": "Lime" },
+        { "emoji": "🌶️", "name": "Salsa" }
+      ],
+      "reviews": [
+        { "name": "Carlos", "rating": 5, "text": "Authentic! Just like the ones back home in Mexico!" },
+        { "name": "Rachel", "rating": 4, "text": "Great flavor, perfectly seasoned meat." },
+        { "name": "Kevin", "rating": 5, "text": "Best tacos I've had in this city!" }
+      ],
+      "relatedSlugs": ["gourmet-burger", "carbonara-pasta"]
+    }
+  ]
+}
