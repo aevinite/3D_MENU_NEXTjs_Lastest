@@ -405,7 +405,7 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 }
 .cat-scroller::-webkit-scrollbar { display:none; }
 .cat-card {
-  min-width: 74px; height: 76px; background: rgba(26,15,10,0.6); border: var(--border);
+  min-width: 82px; height: 86px; background: rgba(26,15,10,0.6); border: var(--border);
   border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.4s var(--ease);
   backdrop-filter: blur(10px);
@@ -431,6 +431,9 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   transform: scale(1.08);
 }
 .cat-card.active .cat-name { color: #ffffff; font-weight: 800; }
+/* dark mode: black icon, white text on gold active card */
+[data-theme="dark"] .cat-card.active .cat-icon { color: #1a0f0a; }
+[data-theme="dark"] .cat-card.active .cat-name { color: #ffffff; }
 .cat-card:hover:not(.active) {
   transform: translateY(-2px);
   border-color: rgba(212, 165, 116, 0.4);
@@ -441,7 +444,7 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   transform: scale(1.12);
 }
 .cat-icon {
-  font-size: 20px; margin-bottom: 6px;
+  font-size: 21px; margin-bottom: 6px;
   transition: color 0.3s var(--ease), transform 0.3s var(--ease), filter 0.3s var(--ease);
   color: var(--accent);
 }
@@ -561,12 +564,12 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 .gallery-mode .dish-thumb { width: 110px; height: 110px; border-radius: 20px; }
-.badge-4d { 
-  position: absolute; bottom: 10px; right: 10px; 
-  background: linear-gradient(135deg, #083344 0%, #164e63 100%); 
-  color: #67e8f9; 
-  font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 8px; 
-  display: inline-flex; align-items: center; gap: 4px; 
+.badge-4d {
+  position: absolute; bottom: 10px; right: 10px;
+  background: linear-gradient(135deg, #083344 0%, #164e63 100%);
+  color: #ffffff;
+  font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 4px;
   box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
   animation: pulse 2s infinite;
   transition: all 0.3s var(--ease);
@@ -722,7 +725,8 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 }
 .viewer-wrapper .hs-card-wrap{
   position:absolute;
-  transform:translate(-50%,-50%);
+  transform:translate(-50%,-50%) scale(0.8);
+  opacity:0;
   display:flex;
   flex-direction:column;
   align-items:center;

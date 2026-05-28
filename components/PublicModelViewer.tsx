@@ -176,12 +176,10 @@ export default function PublicModelViewer({
                   position: "absolute",
                   left: "0px",
                   top: "0px",
-                  transform: "translate(-50%,-50%) scale(0.8)",
                   pointerEvents: "none",
                   userSelect: "none",
                   WebkitUserSelect: "none",
                   whiteSpace: "nowrap",
-                  opacity: "0",
                 }}
               >
                 <div className="hs-title">{tag.name}</div>
