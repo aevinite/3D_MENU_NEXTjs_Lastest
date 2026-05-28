@@ -416,7 +416,6 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
       
       <div className="detail-body">
         <h2 id="detail-title" className="detail-title">{item.title}</h2>
-        <p className="detail-subtitle" id="detail-subtitle">{item.description}</p>
         <div className="rating-row" id="detail-rating-row">
           <div className="stars">
             {Array.from({ length: 5 }, (_, i) => {
