@@ -44,6 +44,7 @@ export interface Translations {
   tabReviews: string;
   review: string;
   reviews: string;
+  prepTime: string;
 }
 
 const translations: Record<LanguageCode, Translations> = {
@@ -90,6 +91,7 @@ const translations: Record<LanguageCode, Translations> = {
     tabReviews: "Reviews",
     review: "review",
     reviews: "reviews",
+    prepTime: "Prep",
   },
   de: {
     greeting: "GUTEN ABEND",
@@ -134,6 +136,7 @@ const translations: Record<LanguageCode, Translations> = {
     tabReviews: "Bewertungen",
     review: "Bewertung",
     reviews: "Bewertungen",
+    prepTime: "Prep",
   },
   fr: {
     greeting: "BONSOIR",
@@ -178,6 +181,7 @@ const translations: Record<LanguageCode, Translations> = {
     tabReviews: "Avis",
     review: "avis",
     reviews: "avis",
+    prepTime: "Prép",
   },
   ar: {
     greeting: "مساء الخير",
@@ -222,6 +226,7 @@ const translations: Record<LanguageCode, Translations> = {
     tabReviews: "التقييمات",
     review: "تقييم",
     reviews: "تقييمات",
+    prepTime: "وقت",
   },
   hi: {
     greeting: "सुप्रभात",
@@ -266,6 +271,7 @@ const translations: Record<LanguageCode, Translations> = {
     tabReviews: "समीक्षाएं",
     review: "समीक्षा",
     reviews: "समीक्षाएं",
+    prepTime: "समय",
   },
   ko: {
     greeting: "안녕하세요",
@@ -310,6 +316,7 @@ const translations: Record<LanguageCode, Translations> = {
     tabReviews: "리뷰",
     review: "리뷰",
     reviews: "리뷰",
+    prepTime: "시간",
   },
 };
 

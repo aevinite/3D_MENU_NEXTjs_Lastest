@@ -523,7 +523,7 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 /* --- ITEMS --- */
 .items-container { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
 .items-container.gallery-mode {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 14px;
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 14px;
 }
 .item-card { 
   background: rgba(26,15,10,0.6); border: var(--border); padding: 14px; border-radius: 20px; 
@@ -552,10 +552,10 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   border-color: var(--accent);
 }
 .gallery-mode .item-card {
-  flex-direction: column; text-align: center; padding: 12px 10px;
+  flex-direction: column; text-align: left; padding: 10px; align-items: flex-start;
 }
 .thumb-wrapper { position: relative; flex-shrink: 0; margin-right: 16px; }
-.gallery-mode .thumb-wrapper { margin: 0 0 8px 0; width: 100%; }
+.gallery-mode .thumb-wrapper { margin: 0 0 10px 0; width: 100%; aspect-ratio: 1; }
 .dish-thumb { 
   width: 86px; height: 86px; border-radius: 16px; object-fit: cover; transition: all 0.5s var(--ease);
 }
@@ -563,7 +563,7 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   transform: scale(1.1) rotate(2deg); 
   box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
-.gallery-mode .dish-thumb { width: 100%; height: 100px; border-radius: 12px; }
+.gallery-mode .dish-thumb { width: 100%; height: 100%; border-radius: 14px; }
 .badge-4d {
   position: absolute; bottom: 10px; right: 10px;
   background: linear-gradient(135deg, #083344 0%, #164e63 100%);
@@ -2060,6 +2060,24 @@ a *:active,
   background: rgba(212,165,116,0.08);
 }
 
+/* --- RATE TAB GLOW (pulses until clicked) --- */
+@keyframes rateTabGlow {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 14px 3px var(--accent-glow); }
+}
+.review-tab-btn.tab-glow { animation: rateTabGlow 1.6s ease-in-out infinite; }
+
+/* --- REVIEWS LIST: max 3.5 visible then scroll --- */
+.reviews-section {
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) transparent;
+}
+.reviews-section::-webkit-scrollbar { width: 4px; }
+.reviews-section::-webkit-scrollbar-thumb { background: var(--accent-dim); border-radius: 2px; }
+
 /* --- IMAGE LIGHTBOX / ZOOM --- */
 .img-zoom-hint {
   position: absolute;
@@ -2083,17 +2101,24 @@ a *:active,
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: auto;
   padding: 24px;
   animation: fadeIn 0.2s var(--ease);
   cursor: zoom-out;
 }
 .img-lightbox-img {
   max-width: 100%;
-  max-height: 90vh;
+  max-height: 85vh;
   border-radius: 16px;
   object-fit: contain;
   box-shadow: 0 20px 60px rgba(0,0,0,0.8);
   touch-action: pinch-zoom;
+  cursor: default;
+  transition: transform 0.3s ease;
+}
+.img-lightbox-img.zoomed {
+  transform: scale(2.2);
+  cursor: zoom-out;
 }
 .img-lightbox-close {
   position: absolute;
@@ -2112,6 +2137,11 @@ a *:active,
   -webkit-backdrop-filter: blur(8px);
 }
 .img-lightbox-close:hover { background: rgba(255,255,255,0.25); }
+
+/* --- BADGE 4D: isolated from link color inherit --- */
+/* Must come AFTER the .item-card-link * { color: inherit !important } rule */
+.thumb-wrapper .badge-4d { color: #ffffff !important; }
+.item-card:hover .thumb-wrapper .badge-4d { color: #1a0f0a !important; }
 
 /* --- GLOBAL TAP HIGHLIGHT + SELECTION FIX --- */
 a { -webkit-tap-highlight-color: transparent; }
