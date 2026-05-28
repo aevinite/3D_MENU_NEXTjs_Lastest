@@ -135,7 +135,6 @@ export default function PublicModelViewer({
                   strokeWidth="0.9"
                   strokeLinecap="round"
                   className="hs-line-el"
-                  style={{ opacity: "0" }}
                 />
               </svg>
             </button>

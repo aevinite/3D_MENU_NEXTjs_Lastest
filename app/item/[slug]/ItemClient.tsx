@@ -55,9 +55,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
   const [reviewText, setReviewText] = useState("");
   const [localReviews, setLocalReviews] = useState<{name: string; rating: number; text: string}[]>([]);
   const [reviewTab, setReviewTab] = useState<"rate" | "reviews">("reviews");
-  const [rateTabClicked, setRateTabClicked] = useState(false);
   const [imgZoom, setImgZoom] = useState(false);
-  const [imgZoomed, setImgZoomed] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const router = useRouter();
@@ -357,15 +355,15 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
       </div>
 
       {imgZoom && (
-        <div className="img-lightbox" onClick={() => { setImgZoom(false); setImgZoomed(false); }}>
-          <button className="img-lightbox-close" onClick={(e) => { e.stopPropagation(); setImgZoom(false); setImgZoomed(false); }}>
+        <div className="img-lightbox" onClick={() => setImgZoom(false)}>
+          <button className="img-lightbox-close" onClick={(e) => { e.stopPropagation(); setImgZoom(false); }}>
             <i className="fas fa-times"></i>
           </button>
           <img
             src={item.image}
             alt={item.title}
-            className={`img-lightbox-img ${imgZoomed ? "zoomed" : ""}`}
-            onClick={(e) => { e.stopPropagation(); setImgZoomed(!imgZoomed); }}
+            className="img-lightbox-img"
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
@@ -487,8 +485,8 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
         <div className="section-label" style={{ marginTop: '24px' }}>{t.customerReviews}</div>
         <div className="review-tabs">
           <button
-            className={`review-tab-btn ${reviewTab === "rate" ? "active" : ""} ${!rateTabClicked && reviewTab !== "rate" ? "tab-glow" : ""}`}
-            onClick={() => { setReviewTab("rate"); setRateTabClicked(true); }}
+            className={`review-tab-btn ${reviewTab === "rate" ? "active" : ""} ${reviewTab === "reviews" ? "tab-glow" : ""}`}
+            onClick={() => setReviewTab("rate")}
           >
             ⭐ {t.tabRate}
           </button>
