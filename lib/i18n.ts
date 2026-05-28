@@ -73,7 +73,7 @@ const translations: Record<LanguageCode, Translations> = {
     ingredients: "Ingredients",
     aboutDish: "About this dish",
     customerReviews: "Customer Reviews",
-    rateThisDish: "Rate this dish",
+    rateThisDish: "Rate this Dish",
     yourName: "Your name",
     sharePlaceholder: "Share your thoughts about this dish...",
     youMightLike: "You might also like",
