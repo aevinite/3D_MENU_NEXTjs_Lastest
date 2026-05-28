@@ -79,14 +79,36 @@ export const setLanguage = (code: LanguageCode) => {
   }
 };
 
-// formatPrice converts a USD price to the user's chosen currency and
-// returns a display string like "₹1,091" or "AED 47.67".
+// Round a converted price to a "nice" customer-facing number.
+// We round to the nearest 5 / 10 / 100 depending on magnitude so we never
+// show fractions like ₹1091 or AED 47.67 — restaurant menu prices look
+// confident when they end in .00, .50, .95, or 0/5 in whole-number currencies.
+const niceRound = (value: number, decimals: number): number => {
+  if (!Number.isFinite(value)) return 0;
+  if (decimals === 0) {
+    // For ₹ and other whole-number currencies, snap to the nearest pleasing step.
+    if (value >= 500) return Math.round(value / 50) * 50;
+    if (value >= 100) return Math.round(value / 10) * 10;
+    if (value >= 20)  return Math.round(value / 5) * 5;
+    return Math.round(value);
+  }
+  // For $/€/AED etc, end prices in .95 if close, otherwise nearest .50.
+  const whole = Math.floor(value);
+  const frac = value - whole;
+  if (Math.abs(frac - 0.99) < 0.07) return whole + 0.99;
+  if (frac < 0.25) return whole;
+  if (frac < 0.75) return whole + 0.5;
+  return whole + 0.99;
+};
+
+// formatPrice converts a USD price to the user's chosen currency, rounds
+// it to a nice display value, and returns a string like "₹1,100" or "$12.99".
 export const formatPrice = (price: string | number, currency?: CurrencyMeta): string => {
   const cur = currency || getCurrency();
   const n = typeof price === "string" ? parseFloat(price) : price;
   if (!Number.isFinite(n)) return `${cur.symbol}0`;
-  const converted = n * cur.rate;
-  const formatted = converted.toLocaleString("en-US", {
+  const rounded = niceRound(n * cur.rate, cur.decimals);
+  const formatted = rounded.toLocaleString("en-US", {
     minimumFractionDigits: cur.decimals,
     maximumFractionDigits: cur.decimals,
   });

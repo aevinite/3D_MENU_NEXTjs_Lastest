@@ -326,35 +326,6 @@ export default function ItemClient({ slug }: { slug: string }) {
 
   return (
     <div id="detail-page" className="page active item-detail-page">
-      {(() => {
-        if (!allItems.length || !item) return null;
-        const siblings = allItems.filter((it) => it.category === item.category);
-        const idx = siblings.findIndex((it) => it.slug === item.slug);
-        if (idx < 0 || siblings.length < 2) return null;
-        const prev = siblings[(idx - 1 + siblings.length) % siblings.length];
-        const next = siblings[(idx + 1) % siblings.length];
-        return (
-          <>
-            <Link
-              href={`/item/${prev.slug}`}
-              className="dish-nav dish-nav-prev"
-              aria-label={`Previous: ${prev.title}`}
-              title={prev.title}
-            >
-              <i className="fas fa-chevron-left"></i>
-            </Link>
-            <Link
-              href={`/item/${next.slug}`}
-              className="dish-nav dish-nav-next"
-              aria-label={`Next: ${next.title}`}
-              title={next.title}
-            >
-              <i className="fas fa-chevron-right"></i>
-            </Link>
-          </>
-        );
-      })()}
-
       <div className="nav" style={{ position: 'fixed', top: 0, left: 0, width: '100%', background: 'transparent', backdropFilter: 'none', WebkitBackdropFilter: 'none', borderBottom: 'none', zIndex: 51 }}>
         <Link href="/menu" className="nav-btn" style={{ textDecoration: 'none' }}>
           <i className="fas fa-arrow-left"></i>
@@ -542,6 +513,33 @@ export default function ItemClient({ slug }: { slug: string }) {
           </>
         )}
         
+        {(() => {
+          if (!allItems.length || !item) return null;
+          const siblings = allItems.filter((it) => it.category === item.category);
+          const idx = siblings.findIndex((it) => it.slug === item.slug);
+          if (idx < 0 || siblings.length < 2) return null;
+          const prev = siblings[(idx - 1 + siblings.length) % siblings.length];
+          const next = siblings[(idx + 1) % siblings.length];
+          return (
+            <div className="dish-peek" aria-label="Other dishes in this category">
+              <Link href={`/item/${prev.slug}`} className="dish-peek-link prev">
+                <i className="fas fa-chevron-left" aria-hidden="true"></i>
+                <span className="dish-peek-text">
+                  <span className="dish-peek-label">Previous</span>
+                  <span className="dish-peek-name">{prev.title}</span>
+                </span>
+              </Link>
+              <Link href={`/item/${next.slug}`} className="dish-peek-link next">
+                <i className="fas fa-chevron-right" aria-hidden="true"></i>
+                <span className="dish-peek-text">
+                  <span className="dish-peek-label">Next</span>
+                  <span className="dish-peek-name">{next.title}</span>
+                </span>
+              </Link>
+            </div>
+          );
+        })()}
+
         <div className="btn-row" style={{ marginTop: '8px' }}>
           <button className="btn btn-secondary" onClick={goToMenu}>
             <i className="fas fa-arrow-left"></i> Back to Menu

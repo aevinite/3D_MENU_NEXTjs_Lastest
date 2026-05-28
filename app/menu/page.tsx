@@ -6,12 +6,12 @@ import FoodCard from "@/components/FoodCard";
 import { modelLoader } from "@/lib/modelLoader";
 
 const categories = [
-  { id: "all",     name: "All",     icon: "fa-utensils",   color: "#D4A574", glow: "rgba(212,165,116,0.35)" },
-  { id: "burgers", name: "Burgers", icon: "fa-burger",     color: "#EF4444", glow: "rgba(239,68,68,0.35)" },
-  { id: "pizza",   name: "Pizza",   icon: "fa-pizza-slice",color: "#F97316", glow: "rgba(249,115,22,0.35)" },
-  { id: "sushi",   name: "Sushi",   icon: "fa-fish",       color: "#F472B6", glow: "rgba(244,114,182,0.35)" },
-  { id: "pasta",   name: "Pasta",   icon: "fa-bowl-food",  color: "#EAB308", glow: "rgba(234,179,8,0.35)" },
-  { id: "salads",  name: "Salads",  icon: "fa-leaf",       color: "#22C55E", glow: "rgba(34,197,94,0.35)" },
+  { id: "all",     name: "All",     icon: "fa-utensils" },
+  { id: "burgers", name: "Burgers", icon: "fa-burger" },
+  { id: "pizza",   name: "Pizza",   icon: "fa-pizza-slice" },
+  { id: "sushi",   name: "Sushi",   icon: "fa-fish" },
+  { id: "pasta",   name: "Pasta",   icon: "fa-bowl-food" },
+  { id: "salads",  name: "Salads",  icon: "fa-leaf" },
 ];
 
 interface FoodItem {
@@ -104,7 +104,7 @@ export default function MenuPage() {
         <div className="section-header">
           <span className="section-title">CATEGORIES</span>
           <span className="browse-hint" aria-hidden="true">
-            Browse <i className="fas fa-arrow-right"></i>
+            Slide <i className="fas fa-arrow-right"></i>
           </span>
         </div>
         <div className="cat-scroller" id="cat-scroller" role="tablist" aria-label="Menu categories">
@@ -115,7 +115,6 @@ export default function MenuPage() {
               role="tab"
               aria-selected={cat.id === currentCategory}
               className={`cat-card ${cat.id === currentCategory ? "active" : ""}`}
-              style={{ ["--cat-color" as string]: cat.color, ["--cat-glow" as string]: cat.glow }}
               onClick={() => setCurrentCategory(cat.id)}
             >
               <div className="cat-icon" aria-hidden="true">
