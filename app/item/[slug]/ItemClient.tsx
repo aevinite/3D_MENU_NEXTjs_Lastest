@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import StarRating from "@/components/StarRating";
@@ -56,6 +56,10 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
   const [localReviews, setLocalReviews] = useState<{name: string; rating: number; text: string}[]>([]);
   const [reviewTab, setReviewTab] = useState<"rate" | "reviews">("reviews");
   const [imgZoom, setImgZoom] = useState(false);
+  const [lbScale, setLbScale] = useState(1);
+  const [lbPos, setLbPos] = useState({ x: 0, y: 0 });
+  const pinchRef = useRef<number | null>(null);
+  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const router = useRouter();
@@ -355,15 +359,57 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
       </div>
 
       {imgZoom && (
-        <div className="img-lightbox" onClick={() => setImgZoom(false)}>
-          <button className="img-lightbox-close" onClick={(e) => { e.stopPropagation(); setImgZoom(false); }}>
+        <div
+          className="img-lightbox"
+          onClick={() => { if (lbScale <= 1) { setImgZoom(false); setLbScale(1); setLbPos({ x: 0, y: 0 }); } }}
+        >
+          <button
+            className="img-lightbox-close"
+            onClick={(e) => { e.stopPropagation(); setImgZoom(false); setLbScale(1); setLbPos({ x: 0, y: 0 }); }}
+          >
             <i className="fas fa-times"></i>
           </button>
           <img
             src={item.image}
             alt={item.title}
             className="img-lightbox-img"
-            onClick={(e) => e.stopPropagation()}
+            style={{
+              transform: `scale(${lbScale}) translate(${lbPos.x / lbScale}px, ${lbPos.y / lbScale}px)`,
+              transformOrigin: "center center",
+              transition: lbScale === 1 ? "transform 0.25s" : "none",
+              cursor: lbScale > 1 ? "move" : "zoom-in",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (lbScale > 1) { setLbScale(1); setLbPos({ x: 0, y: 0 }); }
+              else setLbScale(2.5);
+            }}
+            onTouchStart={(e) => {
+              if (e.touches.length === 2) {
+                pinchRef.current = Math.hypot(
+                  e.touches[1].clientX - e.touches[0].clientX,
+                  e.touches[1].clientY - e.touches[0].clientY
+                );
+              } else if (e.touches.length === 1 && lbScale > 1) {
+                lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+              }
+            }}
+            onTouchMove={(e) => {
+              if (e.touches.length === 2 && pinchRef.current !== null) {
+                const dist = Math.hypot(
+                  e.touches[1].clientX - e.touches[0].clientX,
+                  e.touches[1].clientY - e.touches[0].clientY
+                );
+                setLbScale(s => Math.min(5, Math.max(1, s * (dist / pinchRef.current!))));
+                pinchRef.current = dist;
+              } else if (e.touches.length === 1 && lbScale > 1 && lastTouchRef.current) {
+                const dx = e.touches[0].clientX - lastTouchRef.current.x;
+                const dy = e.touches[0].clientY - lastTouchRef.current.y;
+                setLbPos(p => ({ x: p.x + dx, y: p.y + dy }));
+                lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+              }
+            }}
+            onTouchEnd={() => { pinchRef.current = null; lastTouchRef.current = null; }}
           />
         </div>
       )}

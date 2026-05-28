@@ -1065,7 +1065,8 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 .btn-submit-review:active { transform: translateY(0) scale(0.98); }
 
 .form-top-row {
-  margin-bottom: 12px;
+  margin-top: -6px;
+  margin-bottom: 10px;
 }
 
 /* ── New Dive-in Star Rating (no GSAP) ── */
@@ -1087,7 +1088,7 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 }
 .sr-li {
   width: 40px;
-  height: 56px;
+  height: 36px;
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -1525,7 +1526,7 @@ a *:active,
 }
 .sr-li {
   width: 40px;
-  height: 64px;
+  height: 38px;
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -2064,12 +2065,12 @@ a *:active,
   background: rgba(212,165,116,0.08);
 }
 
-/* --- RATE TAB GLOW (pulses until clicked) --- */
+/* --- RATE TAB GLOW (pulses when user is on Reviews, prompting them to rate) --- */
 @keyframes rateTabGlow {
-  0%, 100% { box-shadow: none; }
-  50% { box-shadow: 0 0 14px 3px var(--accent-glow); }
+  0%, 100% { background: transparent; color: var(--muted); }
+  50% { background: rgba(212, 165, 116, 0.22); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 }
-.review-tab-btn.tab-glow { animation: rateTabGlow 1.6s ease-in-out infinite; }
+.review-tab-btn.tab-glow { animation: rateTabGlow 1.4s ease-in-out infinite; }
 
 /* --- REVIEWS LIST: max 3.5 visible then scroll --- */
 .reviews-section {

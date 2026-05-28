@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import Script from "next/script";
 
 interface PublicConfig {
@@ -32,17 +32,6 @@ export default function PublicModelViewer({
   mvRef: React.RefObject<any>;
 }) {
   const lineRefs = useRef<Map<string, SVGLineElement>>(new Map());
-
-  useEffect(() => {
-    lineRefs.current.forEach((line) => {
-      line.classList.remove("line-visible");
-      line.style.transition = "none";
-      line.style.opacity = "0";
-      if (line.style.strokeDasharray) {
-        line.style.strokeDashoffset = line.style.strokeDasharray;
-      }
-    });
-  }, [config]);
 
   if (!config.modelUrl || config.modelUrl === "SUPABASE_GLB_URL_HERE") {
     return (
