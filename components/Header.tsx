@@ -80,7 +80,6 @@ export default function Header() {
     <div className="nav">
       <div className="brand">
         <h1 className="brand-title">
-          <span className="brand-highlight">My</span>{" "}
           <span className="brand-plain">little</span>{" "}
           <span className="brand-highlight">French</span>{" "}
           <span className="brand-plain">house</span>

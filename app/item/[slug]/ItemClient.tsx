@@ -355,9 +355,20 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
         <p className="detail-subtitle" id="detail-subtitle">{item.description}</p>
         <div className="rating-row" id="detail-rating-row">
           <div className="stars">
-            {Array.from({ length: 5 }, (_, i) => (
-              <span key={i} className="star">{i < Math.round(rating) ? '★' : '☆'}</span>
-            ))}
+            {Array.from({ length: 5 }, (_, i) => {
+              const full = i + 1 <= Math.floor(rating);
+              const frac = rating - Math.floor(rating);
+              if (full) return <span key={i} className="star">★</span>;
+              if (i === Math.floor(rating) && frac > 0) {
+                return (
+                  <span key={i} className="star-half-wrap">
+                    <span className="star" style={{ color: "var(--muted2, rgba(212,165,116,0.3))" }}>★</span>
+                    <span className="star-half-fill" style={{ width: `${frac * 100}%` }}>★</span>
+                  </span>
+                );
+              }
+              return <span key={i} className="star" style={{ color: "var(--muted2, rgba(212,165,116,0.3))" }}>★</span>;
+            })}
           </div>
           <span className="rating-value">{rating.toFixed(1)}</span>
           <span className="rating-count">({reviewCount} {reviewCount === 1 ? t.review : t.reviews})</span>
@@ -552,22 +563,24 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
           const next = siblings[(idx + 1) % siblings.length];
           const catParam = navCat !== item.category ? `?cat=${navCat}` : "";
           return (
-            <div className="dish-peek" aria-label="Other dishes in this category">
-              <Link href={`/item/${prev.slug}${catParam}`} className="dish-peek-link prev">
-                <img src={prev.image} alt={prev.title} className="peek-thumb" />
-                <span className="dish-peek-text">
-                  <span className="dish-peek-label">← {t.previous}</span>
-                  <span className="dish-peek-name">{prev.title}</span>
-                </span>
+            <>
+              <Link
+                href={`/item/${prev.slug}${catParam}`}
+                className="dish-nav-arrow prev"
+                title={prev.title}
+                aria-label={`${t.previous}: ${prev.title}`}
+              >
+                <i className="fas fa-chevron-left" aria-hidden="true"></i>
               </Link>
-              <Link href={`/item/${next.slug}${catParam}`} className="dish-peek-link next">
-                <span className="dish-peek-text">
-                  <span className="dish-peek-label">{t.next} →</span>
-                  <span className="dish-peek-name">{next.title}</span>
-                </span>
-                <img src={next.image} alt={next.title} className="peek-thumb" />
+              <Link
+                href={`/item/${next.slug}${catParam}`}
+                className="dish-nav-arrow next"
+                title={next.title}
+                aria-label={`${t.next}: ${next.title}`}
+              >
+                <i className="fas fa-chevron-right" aria-hidden="true"></i>
               </Link>
-            </div>
+            </>
           );
         })()}
 

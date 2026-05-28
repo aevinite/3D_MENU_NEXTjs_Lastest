@@ -474,8 +474,8 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   color: var(--muted); font-size: 14px; transition: color 0.3s;
 }
 .search-input:focus + .search-icon { color: var(--accent); }
-.header-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.current-cat { 
+.header-controls { display: flex; flex-direction: column; gap: 10px; }
+.current-cat {
   font-family: 'Playfair Display'; font-size: 20px; color: var(--text); font-weight: 700;
 }
 .controls-group { display: flex; align-items: center; gap: 10px; }
@@ -2051,5 +2051,82 @@ a *:active,
   background: rgba(212,165,116,0.08);
 }
 
-/* --- GLOBAL TAP HIGHLIGHT FIX --- */
+/* --- GLOBAL TAP HIGHLIGHT + SELECTION FIX --- */
 a { -webkit-tap-highlight-color: transparent; }
+button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) { outline: none; }
+
+/* --- HEADER CONTROLS: two-row layout so filter bar never overflows --- */
+.header-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.header-controls-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+/* filter chips fill full width evenly */
+.header-controls .filter-row { width: 100%; }
+.header-controls .filter-chip { flex: 1; min-width: 0; }
+
+/* --- CATEGORY ICONS: keep gold in light mode (less garish) --- */
+[data-theme="light"] .cat-card:not(.active) .cat-icon {
+  color: var(--accent) !important;
+  filter: none;
+}
+
+/* --- FLOATING SIDE ARROWS (prev/next dish navigation) --- */
+.dish-nav-arrow {
+  position: fixed;
+  top: 55%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  background: rgba(26, 15, 10, 0.72);
+  border: 1px solid rgba(212, 165, 116, 0.45);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  z-index: 50;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  text-decoration: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.22s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.dish-nav-arrow.prev { left: 8px; }
+.dish-nav-arrow.next { right: 8px; }
+.dish-nav-arrow i { font-size: 14px; }
+.dish-nav-arrow:hover {
+  background: var(--accent-grad);
+  color: #1a0f0a;
+  transform: translateY(-50%) scale(1.1);
+  border-color: transparent;
+  box-shadow: 0 8px 24px var(--accent-glow);
+}
+.dish-nav-arrow:active { transform: translateY(-50%) scale(0.92); }
+[data-theme="light"] .dish-nav-arrow {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(139, 90, 43, 0.3);
+}
+
+/* half-star wrapper used in rating row */
+.star-half-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+}
+.star-half-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  width: 50%;
+  color: var(--accent);
+}
