@@ -411,39 +411,48 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
-/* category icon glow — each card uses --cat-color set via inline style */
+/* category icons — uniform white (dark mode) / dark (light mode), gold glow on active */
 .cat-card .cat-icon {
-  color: var(--cat-color, var(--accent));
+  color: rgba(255, 255, 255, 0.75);
   transition: color 0.25s var(--ease), transform 0.25s var(--ease), filter 0.25s var(--ease);
+}
+[data-theme="light"] .cat-card:not(.active) .cat-icon {
+  color: rgba(60, 42, 30, 0.65) !important;
 }
 .cat-card.active {
   background: var(--accent-grad);
   border-color: transparent;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 20px var(--cat-color, var(--accent-glow));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 .cat-card.active .cat-icon {
-  color: #ffffff;
-  filter: drop-shadow(0 0 10px var(--cat-color, var(--accent)));
-  transform: scale(1.15);
+  color: #1a0f0a;
+  filter: none;
+  transform: scale(1.1);
 }
 .cat-card.active .cat-name { color: #1a0f0a; font-weight: 800; }
 .cat-card:hover:not(.active) {
   transform: translateY(-2px);
-  border-color: rgba(212, 165, 116, 0.45);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(212, 165, 116, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 .cat-card:hover:not(.active) .cat-icon {
-  filter: drop-shadow(0 0 8px var(--cat-color, var(--accent)));
-  transform: scale(1.15);
+  color: rgba(255, 255, 255, 1);
+  filter: drop-shadow(0 0 6px rgba(212, 165, 116, 0.5));
+  transform: scale(1.12);
 }
+[data-theme="light"] .cat-card:hover:not(.active) .cat-icon {
+  color: rgba(60, 42, 30, 0.9) !important;
+  filter: drop-shadow(0 0 5px rgba(139, 90, 43, 0.4));
+}
+[data-theme="light"] .cat-card.active .cat-icon,
 [data-theme="light"] .cat-card.active .cat-name {
   color: #1a0f0a;
 }
 .cat-icon {
   font-size: 22px; margin-bottom: 8px;
   transition: color 0.3s var(--ease), transform 0.3s var(--ease), filter 0.3s var(--ease);
-  color: var(--cat-color, var(--accent));
+  color: rgba(255, 255, 255, 0.75);
 }
 .cat-name { 
   font-size: 11px; color: var(--muted); font-weight: 600; transition: all 0.3s;
@@ -474,12 +483,13 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   color: var(--muted); font-size: 14px; transition: color 0.3s;
 }
 .search-input:focus + .search-icon { color: var(--accent); }
-.header-controls { display: flex; flex-direction: column; gap: 10px; }
+.header-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .current-cat {
   font-family: 'Playfair Display'; font-size: 20px; color: var(--text); font-weight: 700;
 }
-.controls-group { display: flex; align-items: center; gap: 10px; }
-.filter-row { display: flex; gap: 6px; align-items: center; }
+.controls-group { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; justify-content: flex-end; }
+.filter-row { display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
+.filter-row::-webkit-scrollbar { display: none; }
 .filter-chip {
   padding: 8px 12px;
   min-width: 56px;
@@ -493,6 +503,7 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   transition: all 0.3s var(--ease);
   text-align: center;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .filter-chip:hover { 
   transform: translateY(-2px); color: var(--text); border-color: var(--accent);
@@ -2057,76 +2068,54 @@ button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
 button:focus:not(:focus-visible),
 a:focus:not(:focus-visible) { outline: none; }
 
-/* --- HEADER CONTROLS: two-row layout so filter bar never overflows --- */
-.header-controls {
+/* --- TRANSPARENT EDGE STRIPS for prev/next navigation --- */
+.dish-nav-strip {
+  position: fixed;
+  top: calc(64px + env(safe-area-inset-top));
+  bottom: 0;
+  width: 36px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-.header-controls-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-/* filter chips fill full width evenly */
-.header-controls .filter-row { width: 100%; }
-.header-controls .filter-chip { flex: 1; min-width: 0; }
-
-/* --- CATEGORY ICONS: keep gold in light mode (less garish) --- */
-[data-theme="light"] .cat-card:not(.active) .cat-icon {
-  color: var(--accent) !important;
-  filter: none;
-}
-
-/* --- FLOATING SIDE ARROWS (prev/next dish navigation) --- */
-.dish-nav-arrow {
-  position: fixed;
-  top: 55%;
-  transform: translateY(-50%);
-  width: 46px;
-  height: 46px;
-  background: rgba(26, 15, 10, 0.72);
-  border: 1px solid rgba(212, 165, 116, 0.45);
-  border-radius: 50%;
-  display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
-  z-index: 50;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  gap: 6px;
+  z-index: 49;
   text-decoration: none;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: all 0.22s var(--ease);
+  background: transparent;
   -webkit-tap-highlight-color: transparent;
 }
-.dish-nav-arrow.prev { left: 8px; }
-.dish-nav-arrow.next { right: 8px; }
-.dish-nav-arrow i { font-size: 14px; }
-.dish-nav-arrow:hover {
-  background: var(--accent-grad);
-  color: #1a0f0a;
-  transform: translateY(-50%) scale(1.1);
-  border-color: transparent;
-  box-shadow: 0 8px 24px var(--accent-glow);
+.dish-nav-strip.prev { left: 0; }
+.dish-nav-strip.next { right: 0; }
+.dish-nav-strip i {
+  color: var(--text);
+  opacity: 0.18;
+  font-size: 10px;
+  line-height: 1;
+  transition: opacity 0.2s var(--ease);
 }
-.dish-nav-arrow:active { transform: translateY(-50%) scale(0.92); }
-[data-theme="light"] .dish-nav-arrow {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(139, 90, 43, 0.3);
+.dish-nav-strip:hover i,
+.dish-nav-strip:active i { opacity: 0.55; }
+[data-theme="light"] .dish-nav-strip i { opacity: 0.22; }
+
+/* --- 4D BADGE: boost visibility in light mode --- */
+[data-theme="light"] .badge-4d {
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.65), 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
-/* half-star wrapper used in rating row */
+/* --- HALF-STAR: fix vertical alignment in rating row --- */
 .star-half-wrap {
   position: relative;
-  display: inline-block;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
 }
 .star-half-fill {
   position: absolute;
   left: 0;
   top: 0;
+  bottom: 0;
   overflow: hidden;
-  width: 50%;
+  display: inline-flex;
+  align-items: center;
   color: var(--accent);
 }

@@ -323,8 +323,10 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
     );
   }
 
-  const rating = parseFloat(item.rating);
-  const reviewCount = getReviewCount();
+  const rating = localReviews.length > 0
+    ? localReviews.reduce((sum, r) => sum + r.rating, 0) / localReviews.length
+    : parseFloat(item.rating);
+  const reviewCount = localReviews.length;
   const relatedItems = getRelatedItems();
 
   return (
@@ -566,19 +568,21 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
             <>
               <Link
                 href={`/item/${prev.slug}${catParam}`}
-                className="dish-nav-arrow prev"
+                className="dish-nav-strip prev"
                 title={prev.title}
                 aria-label={`${t.previous}: ${prev.title}`}
               >
-                <i className="fas fa-chevron-left" aria-hidden="true"></i>
+                <i className="fas fa-chevron-left"></i>
+                <i className="fas fa-chevron-left"></i>
               </Link>
               <Link
                 href={`/item/${next.slug}${catParam}`}
-                className="dish-nav-arrow next"
+                className="dish-nav-strip next"
                 title={next.title}
                 aria-label={`${t.next}: ${next.title}`}
               >
-                <i className="fas fa-chevron-right" aria-hidden="true"></i>
+                <i className="fas fa-chevron-right"></i>
+                <i className="fas fa-chevron-right"></i>
               </Link>
             </>
           );

@@ -128,7 +128,6 @@ export default function MenuPage() {
               role="tab"
               aria-selected={cat.id === currentCategory}
               className={`cat-card ${cat.id === currentCategory ? "active" : ""}`}
-              style={{ "--cat-color": cat.color } as React.CSSProperties}
               onClick={() => setCurrentCategory(cat.id)}
             >
               <div className="cat-icon" aria-hidden="true">
@@ -153,9 +152,35 @@ export default function MenuPage() {
             />
           </div>
           <div className="header-controls">
-            <div className="header-controls-top">
-              <div className="current-cat" id="current-cat">
-                {categories.find((c) => c.id === currentCategory)?.name || t.catAll}
+            <div className="current-cat" id="current-cat">
+              {categories.find((c) => c.id === currentCategory)?.name || t.catAll}
+            </div>
+            <div className="controls-group">
+              <div className="filter-row" role="group" aria-label="Dietary filter">
+                <button
+                  type="button"
+                  className={`filter-chip ${currentFilter === "all" ? "active" : ""}`}
+                  aria-pressed={currentFilter === "all"}
+                  onClick={() => setCurrentFilter("all")}
+                >
+                  {t.filterAll}
+                </button>
+                <button
+                  type="button"
+                  className={`filter-chip ${currentFilter === "veg" ? "active" : ""}`}
+                  aria-pressed={currentFilter === "veg"}
+                  onClick={() => setCurrentFilter("veg")}
+                >
+                  {t.filterVeg}
+                </button>
+                <button
+                  type="button"
+                  className={`filter-chip ${currentFilter === "non-veg" ? "active" : ""}`}
+                  aria-pressed={currentFilter === "non-veg"}
+                  onClick={() => setCurrentFilter("non-veg")}
+                >
+                  {t.filterNonVeg}
+                </button>
               </div>
               <div className="layout-switch" role="group" aria-label="Layout">
                 <button
@@ -177,32 +202,6 @@ export default function MenuPage() {
                   <i className="fas fa-th-large" aria-hidden="true"></i>
                 </button>
               </div>
-            </div>
-            <div className="filter-row" role="group" aria-label="Dietary filter">
-              <button
-                type="button"
-                className={`filter-chip ${currentFilter === "all" ? "active" : ""}`}
-                aria-pressed={currentFilter === "all"}
-                onClick={() => setCurrentFilter("all")}
-              >
-                {t.filterAll}
-              </button>
-              <button
-                type="button"
-                className={`filter-chip ${currentFilter === "veg" ? "active" : ""}`}
-                aria-pressed={currentFilter === "veg"}
-                onClick={() => setCurrentFilter("veg")}
-              >
-                {t.filterVeg}
-              </button>
-              <button
-                type="button"
-                className={`filter-chip ${currentFilter === "non-veg" ? "active" : ""}`}
-                aria-pressed={currentFilter === "non-veg"}
-                onClick={() => setCurrentFilter("non-veg")}
-              >
-                {t.filterNonVeg}
-              </button>
             </div>
           </div>
         </div>
