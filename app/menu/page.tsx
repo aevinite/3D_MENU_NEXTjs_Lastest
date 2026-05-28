@@ -4,14 +4,15 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import FoodCard from "@/components/FoodCard";
 import { modelLoader } from "@/lib/modelLoader";
+import { useTranslation } from "@/lib/i18n";
 
-const categories = [
-  { id: "all",     name: "All",     icon: "fa-utensils" },
-  { id: "burgers", name: "Burgers", icon: "fa-burger" },
-  { id: "pizza",   name: "Pizza",   icon: "fa-pizza-slice" },
-  { id: "sushi",   name: "Sushi",   icon: "fa-fish" },
-  { id: "pasta",   name: "Pasta",   icon: "fa-bowl-food" },
-  { id: "salads",  name: "Salads",  icon: "fa-leaf" },
+const CAT_META = [
+  { id: "all",     icon: "fa-utensils", color: "#d4a574" },
+  { id: "burgers", icon: "fa-burger",   color: "#f97316" },
+  { id: "pizza",   icon: "fa-pizza-slice", color: "#ef4444" },
+  { id: "sushi",   icon: "fa-fish",     color: "#06b6d4" },
+  { id: "pasta",   icon: "fa-bowl-food", color: "#f59e0b" },
+  { id: "salads",  icon: "fa-leaf",     color: "#22c55e" },
 ];
 
 interface FoodItem {
@@ -37,11 +38,23 @@ interface FoodItem {
 }
 
 export default function MenuPage() {
+  const t = useTranslation();
   const [menuData, setMenuData] = useState<FoodItem[]>([]);
   const [currentCategory, setCurrentCategory] = useState("all");
   const [currentFilter, setCurrentFilter] = useState("all");
   const [layout, setLayout] = useState("list");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const catNameMap: Record<string, string> = {
+    all: t.catAll,
+    burgers: t.catBurgers,
+    pizza: t.catPizza,
+    sushi: t.catSushi,
+    pasta: t.catPasta,
+    salads: t.catSalads,
+  };
+
+  const categories = CAT_META.map((c) => ({ ...c, name: catNameMap[c.id] || c.id }));
 
   useEffect(() => {
     fetch("/content/menu.json")
@@ -97,14 +110,14 @@ export default function MenuPage() {
     <AppShell>
       <div id="main-scroll">
         <div className="hero">
-          <span className="greet-badge">BONSOIR</span>
-          <h2 className="hero-title">Authentic French Cuisine</h2>
+          <span className="greet-badge">{t.greeting}</span>
+          <h2 className="hero-title">{t.heroTitle}</h2>
         </div>
 
         <div className="section-header">
-          <span className="section-title">CATEGORIES</span>
+          <span className="section-title">{t.categories}</span>
           <span className="browse-hint" aria-hidden="true">
-            Slide <i className="fas fa-arrow-right"></i>
+            {t.slide} <i className="fas fa-arrow-right"></i>
           </span>
         </div>
         <div className="cat-scroller" id="cat-scroller" role="tablist" aria-label="Menu categories">
@@ -115,6 +128,7 @@ export default function MenuPage() {
               role="tab"
               aria-selected={cat.id === currentCategory}
               className={`cat-card ${cat.id === currentCategory ? "active" : ""}`}
+              style={{ "--cat-color": cat.color } as React.CSSProperties}
               onClick={() => setCurrentCategory(cat.id)}
             >
               <div className="cat-icon" aria-hidden="true">
@@ -132,15 +146,15 @@ export default function MenuPage() {
               type="search"
               id="search-input"
               className="search-input"
-              placeholder="Search dishes..."
-              aria-label="Search dishes"
+              placeholder={t.searchPlaceholder}
+              aria-label={t.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="header-controls">
             <div className="current-cat" id="current-cat">
-              {categories.find((c) => c.id === currentCategory)?.name || "All Items"}
+              {categories.find((c) => c.id === currentCategory)?.name || t.catAll}
             </div>
             <div className="controls-group">
               <div className="filter-row" role="group" aria-label="Dietary filter">
@@ -150,7 +164,7 @@ export default function MenuPage() {
                   aria-pressed={currentFilter === "all"}
                   onClick={() => setCurrentFilter("all")}
                 >
-                  All
+                  {t.filterAll}
                 </button>
                 <button
                   type="button"
@@ -158,7 +172,7 @@ export default function MenuPage() {
                   aria-pressed={currentFilter === "veg"}
                   onClick={() => setCurrentFilter("veg")}
                 >
-                  🌿 Veg
+                  {t.filterVeg}
                 </button>
                 <button
                   type="button"
@@ -166,7 +180,7 @@ export default function MenuPage() {
                   aria-pressed={currentFilter === "non-veg"}
                   onClick={() => setCurrentFilter("non-veg")}
                 >
-                  🍖 Non-Veg
+                  {t.filterNonVeg}
                 </button>
               </div>
               <div className="layout-switch" role="group" aria-label="Layout">
@@ -198,7 +212,7 @@ export default function MenuPage() {
           className={`items-container ${layout === "gallery" ? "gallery-mode" : ""}`}
         >
           {filteredItems.map((item, index) => (
-            <FoodCard key={item.id} item={item} index={index} />
+            <FoodCard key={item.id} item={item} index={index} viewingCategory={currentCategory} />
           ))}
         </div>
       </div>

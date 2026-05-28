@@ -7,6 +7,7 @@ import StarRating from "@/components/StarRating";
 import InfinityLoader from "@/components/InfinityLoader";
 import { modelLoader } from "@/lib/modelLoader";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
+import { useTranslation } from "@/lib/i18n";
 
 interface FoodItem {
   id: string;
@@ -41,7 +42,8 @@ interface FoodItem {
   relatedSlugs: string[];
 }
 
-export default function ItemClient({ slug }: { slug: string }) {
+export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: string }) {
+  const t = useTranslation();
   const [allItems, setAllItems] = useState<FoodItem[]>([]);
   const [item, setItem] = useState<FoodItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,7 @@ export default function ItemClient({ slug }: { slug: string }) {
   const [reviewName, setReviewName] = useState("");
   const [reviewText, setReviewText] = useState("");
   const [localReviews, setLocalReviews] = useState<{name: string; rating: number; text: string}[]>([]);
+  const [reviewTab, setReviewTab] = useState<"rate" | "reviews">("rate");
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const router = useRouter();
@@ -302,7 +305,7 @@ export default function ItemClient({ slug }: { slug: string }) {
   if (loading) {
     return (
       <div id="detail-page" className="page active item-detail-page flex items-center justify-center min-h-screen">
-        <InfinityLoader label="Plating your dish" />
+        <InfinityLoader label={t.loadingLabel} />
       </div>
     );
   }
@@ -311,10 +314,10 @@ export default function ItemClient({ slug }: { slug: string }) {
     return (
       <div id="detail-page" className="page active item-detail-page flex flex-col items-center justify-center min-h-screen p-4">
         <div className="text-4xl mb-4">⚠️</div>
-        <h2 className="text-xl font-bold text-[var(--text)] mb-2">Item not found</h2>
-        <p className="text-[var(--muted)] mb-4">The item you're looking for doesn't exist.</p>
+        <h2 className="text-xl font-bold text-[var(--text)] mb-2">{t.itemNotFound}</h2>
+        <p className="text-[var(--muted)] mb-4">{t.itemNotFoundDesc}</p>
         <Link href="/menu" className="text-[var(--accent)] font-semibold hover:underline">
-          ← Back to Menu
+          ← {t.backToMenu}
         </Link>
       </div>
     );
@@ -357,36 +360,36 @@ export default function ItemClient({ slug }: { slug: string }) {
             ))}
           </div>
           <span className="rating-value">{rating.toFixed(1)}</span>
-          <span className="rating-count">({reviewCount} review{reviewCount === 1 ? '' : 's'})</span>
+          <span className="rating-count">({reviewCount} {reviewCount === 1 ? t.review : t.reviews})</span>
         </div>
         
         <div className="divider"></div>
 
         <div className="price-row">
           <span className="detail-price" id="detail-price">{currency ? formatPrice(item.price, currency) : `$${item.price}`}</span>
-          <span className="price-label">Starting price</span>
+          <span className="price-label">{t.startingPrice}</span>
         </div>
         
         <div className="stats-row" id="stats-row">
           <div className="stat-box">
             <div className="stat-num">{item.nutrition.calories}</div>
-            <div className="stat-label">Cal</div>
+            <div className="stat-label">{t.cal}</div>
           </div>
           <div className="stat-box">
             <div className="stat-num">{item.nutrition.protein}</div>
-            <div className="stat-label">Protein</div>
+            <div className="stat-label">{t.protein}</div>
           </div>
           <div className="stat-box">
             <div className="stat-num">{item.nutrition.carbs}</div>
-            <div className="stat-label">Carbs</div>
+            <div className="stat-label">{t.carbs}</div>
           </div>
           <div className="stat-box">
             <div className="stat-num">{currency ? formatPrice(item.price, currency) : `$${item.price}`}</div>
-            <div className="stat-label">Price</div>
+            <div className="stat-label">{t.price}</div>
           </div>
         </div>
 
-        <div className="section-label">Ingredients</div>
+        <div className="section-label">{t.ingredients}</div>
         <div className="ingredients-row" id="tags-row">
           {item.ingredients.map((t, i) => {
             if (!emojiIndexMap[t.emoji]) emojiIndexMap[t.emoji] = 0;
@@ -425,74 +428,100 @@ export default function ItemClient({ slug }: { slug: string }) {
           })}
         </div>
 
-        <div className="section-label">About this dish</div>
+        <div className="section-label">{t.aboutDish}</div>
         <div className="desc-box">
           <p id="detail-desc" className={`detail-desc ${descExpanded ? 'expanded' : ''}`}>
             {item.longDescription}
           </p>
           <span id="desc-toggle" className="desc-toggle" onClick={() => setDescExpanded(!descExpanded)}>
-            {descExpanded ? 'Read less ↑' : 'Read more ↓'}
+            {descExpanded ? t.readLess : t.readMore}
           </span>
         </div>
 
         <div className="btn-row">
           <button className="btn btn-gold" onClick={addToCart}>
-            <i className="fas fa-shopping-bag"></i> Add to Cart
+            <i className="fas fa-shopping-bag"></i> {t.addToCart}
           </button>
           {item.is4d && item.modelFolder ? (
             <button id="view-3d-btn" className="btn btn-cyan" onClick={goToViewer}>
-              <i className="fas fa-cube"></i> View in 3D
+              <i className="fas fa-cube"></i> {t.viewIn3D}
             </button>
           ) : (
             <button className="btn btn-cyan" style={{ opacity: 0.5, cursor: 'not-allowed' }} disabled>
-              <i className="fas fa-cube"></i> 3D Preview Unavailable
+              <i className="fas fa-cube"></i> {t.preview3dUnavailable}
             </button>
           )}
         </div>
 
-        <div className="section-label" style={{ marginTop: '24px' }}>Customer Reviews</div>
-        <div className="review-form" id="review-form">
-          <div className="form-title">Rate this dish</div>
-          <div className="form-top-row">
-            <StarRating value={selectedRating} onChange={setSelectedRating} />
-          </div>
-          <input 
-            type="text" 
-            className="review-name-input" 
-            id="review-name" 
-            placeholder="Your name" 
-            value={reviewName}
-            onChange={(e) => setReviewName(e.target.value)}
-          />
-          <textarea 
-            className="review-textarea" 
-            id="review-text" 
-            placeholder="Share your thoughts about this dish..." 
-            rows={3}
-            value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
-          ></textarea>
-          <button className="btn-submit-review" id="submit-review" onClick={submitReview}>Submit Review</button>
+        <div className="section-label" style={{ marginTop: '24px' }}>{t.customerReviews}</div>
+        <div className="review-tabs">
+          <button
+            className={`review-tab-btn ${reviewTab === "rate" ? "active" : ""}`}
+            onClick={() => setReviewTab("rate")}
+          >
+            ⭐ {t.tabRate}
+          </button>
+          <button
+            className={`review-tab-btn ${reviewTab === "reviews" ? "active" : ""}`}
+            onClick={() => setReviewTab("reviews")}
+          >
+            💬 {t.tabReviews} ({localReviews.length})
+          </button>
         </div>
-        <div className="reviews-section" id="reviews-section">
-          {localReviews.map((review, i) => (
-            <div key={i} className="review-card">
-              <div className="review-stars">
-                {Array.from({ length: 5 }, (_, j) => (
-                  <svg key={j} className={`review-star ${j < review.rating ? '' : 'empty'}`} viewBox="0 0 24 24">
-                    <polygon points="12,2 15,8 22,9 17,14 18,21 12,18 6,21 7,14 2,9 9,8"/>
-                  </svg>
-                ))}
-              </div>
-              <div className="review-name">{review.name}</div>
-              <div className="review-comment">{review.text}</div>
+
+        {reviewTab === "rate" && (
+          <div className="review-form" id="review-form">
+            <div className="form-title">{t.rateThisDish}</div>
+            <div className="form-top-row">
+              <StarRating value={selectedRating} onChange={setSelectedRating} />
             </div>
-          ))}
-        </div>
+            <input
+              type="text"
+              className="review-name-input"
+              id="review-name"
+              placeholder={t.yourName}
+              value={reviewName}
+              onChange={(e) => setReviewName(e.target.value)}
+            />
+            <textarea
+              className="review-textarea"
+              id="review-text"
+              placeholder={t.sharePlaceholder}
+              rows={3}
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+            ></textarea>
+            <button className="btn-submit-review" id="submit-review" onClick={submitReview}>{t.submitReview}</button>
+          </div>
+        )}
+
+        {reviewTab === "reviews" && (
+          <div className="reviews-section" id="reviews-section">
+            {localReviews.length === 0 ? (
+              <p style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", padding: "24px 0" }}>
+                No reviews yet. Be the first to review!
+              </p>
+            ) : (
+              localReviews.map((review, i) => (
+                <div key={i} className="review-card">
+                  <div className="review-stars">
+                    {Array.from({ length: 5 }, (_, j) => (
+                      <svg key={j} className={`review-star ${j < review.rating ? "" : "empty"}`} viewBox="0 0 24 24">
+                        <polygon points="12,2 15,8 22,9 17,14 18,21 12,18 6,21 7,14 2,9 9,8"/>
+                      </svg>
+                    ))}
+                  </div>
+                  <div className="review-name">{review.name}</div>
+                  <div className="review-comment">{review.text}</div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
         
         {relatedItems.length > 0 && (
           <>
-            <div className="section-label" style={{ marginTop: 0 }}>You might also like</div>
+            <div className="section-label" style={{ marginTop: 0 }}>{t.youMightLike}</div>
             <div className="related-section" id="related-section">
               {relatedItems.map((related) => (
                 <Link key={related.slug} href={`/item/${related.slug}`} className="related-card-link" style={{ textDecoration: 'none' }}>
@@ -515,26 +544,28 @@ export default function ItemClient({ slug }: { slug: string }) {
         
         {(() => {
           if (!allItems.length || !item) return null;
-          const siblings = allItems.filter((it) => it.category === item.category);
+          const navCat = fromCat || item.category;
+          const siblings = navCat === "all" ? allItems : allItems.filter((it) => it.category === navCat);
           const idx = siblings.findIndex((it) => it.slug === item.slug);
           if (idx < 0 || siblings.length < 2) return null;
           const prev = siblings[(idx - 1 + siblings.length) % siblings.length];
           const next = siblings[(idx + 1) % siblings.length];
+          const catParam = navCat !== item.category ? `?cat=${navCat}` : "";
           return (
             <div className="dish-peek" aria-label="Other dishes in this category">
-              <Link href={`/item/${prev.slug}`} className="dish-peek-link prev">
-                <i className="fas fa-chevron-left" aria-hidden="true"></i>
+              <Link href={`/item/${prev.slug}${catParam}`} className="dish-peek-link prev">
+                <img src={prev.image} alt={prev.title} className="peek-thumb" />
                 <span className="dish-peek-text">
-                  <span className="dish-peek-label">Previous</span>
+                  <span className="dish-peek-label">← {t.previous}</span>
                   <span className="dish-peek-name">{prev.title}</span>
                 </span>
               </Link>
-              <Link href={`/item/${next.slug}`} className="dish-peek-link next">
-                <i className="fas fa-chevron-right" aria-hidden="true"></i>
+              <Link href={`/item/${next.slug}${catParam}`} className="dish-peek-link next">
                 <span className="dish-peek-text">
-                  <span className="dish-peek-label">Next</span>
+                  <span className="dish-peek-label">{t.next} →</span>
                   <span className="dish-peek-name">{next.title}</span>
                 </span>
+                <img src={next.image} alt={next.title} className="peek-thumb" />
               </Link>
             </div>
           );
@@ -542,7 +573,7 @@ export default function ItemClient({ slug }: { slug: string }) {
 
         <div className="btn-row" style={{ marginTop: '8px' }}>
           <button className="btn btn-secondary" onClick={goToMenu}>
-            <i className="fas fa-arrow-left"></i> Back to Menu
+            <i className="fas fa-arrow-left"></i> {t.backToMenu}
           </button>
         </div>
       </div>

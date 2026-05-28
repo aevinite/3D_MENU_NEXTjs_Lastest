@@ -38,7 +38,7 @@ const writeFavorites = (ids: string[]) => {
   } catch {}
 };
 
-export default function FoodCard({ item, index }: { item: FoodItem; index: number }) {
+export default function FoodCard({ item, index, viewingCategory }: { item: FoodItem; index: number; viewingCategory?: string }) {
   const [favorited, setFavorited] = useState(false);
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
 
@@ -68,7 +68,7 @@ export default function FoodCard({ item, index }: { item: FoodItem; index: numbe
   };
 
   return (
-    <Link href={`/item/${item.slug}`} className="item-card-link">
+    <Link href={`/item/${item.slug}${viewingCategory ? `?cat=${viewingCategory}` : ""}`} className="item-card-link">
       <div
         className={`item-card fade-in ${item.is4d ? "is-4d" : ""}`}
         style={{ animationDelay: `${index * 0.06}s` }}
