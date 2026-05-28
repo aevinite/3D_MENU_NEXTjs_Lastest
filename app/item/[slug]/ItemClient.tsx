@@ -55,6 +55,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
   const [reviewText, setReviewText] = useState("");
   const [localReviews, setLocalReviews] = useState<{name: string; rating: number; text: string}[]>([]);
   const [reviewTab, setReviewTab] = useState<"rate" | "reviews">("rate");
+  const [imgZoom, setImgZoom] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const router = useRouter();
@@ -341,7 +342,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
         </button>
       </div>
 
-      <div className="detail-visual">
+      <div className="detail-visual" onClick={() => setImgZoom(true)} style={{ cursor: 'zoom-in' }}>
         <img
           id="detail-img"
           className={`detail-img ${imageLoaded ? 'show' : ''}`}
@@ -350,7 +351,17 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
           decoding="async"
         />
         <div className="detail-img-overlay"></div>
+        <span className="img-zoom-hint"><i className="fas fa-expand-alt"></i></span>
       </div>
+
+      {imgZoom && (
+        <div className="img-lightbox" onClick={() => setImgZoom(false)}>
+          <button className="img-lightbox-close" onClick={() => setImgZoom(false)}>
+            <i className="fas fa-times"></i>
+          </button>
+          <img src={item.image} alt={item.title} className="img-lightbox-img" />
+        </div>
+      )}
       
       <div className="detail-body">
         <h2 id="detail-title" className="detail-title">{item.title}</h2>
