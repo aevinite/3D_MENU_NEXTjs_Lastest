@@ -580,9 +580,9 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   box-shadow: 0 0 12px var(--accent-glow);
 }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 12px rgba(6, 182, 212, 0.4); } 50% { box-shadow: 0 0 24px rgba(6, 182, 212, 0.2); } }
-.diet-badge { 
-  position: absolute; top: 10px; right: 10px; 
-  font-size: 20px; 
+.diet-badge {
+  position: absolute; top: 19px; right: 19px;
+  font-size: 20px;
   transition: all 0.3s var(--ease);
   z-index: 10;
   filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
@@ -2145,6 +2145,86 @@ a *:active,
 /* Must come AFTER the .item-card-link * { color: inherit !important } rule */
 .thumb-wrapper .badge-4d { color: #ffffff !important; }
 .item-card:hover .thumb-wrapper .badge-4d { color: #1a0f0a !important; }
+
+/* --- CART ADD / QTY BUTTON on food cards --- */
+.cart-add-btn {
+  position: absolute; bottom: 10px; right: 10px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  color: #1a0f0a;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  box-shadow: 0 4px 14px var(--accent-glow);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s;
+  z-index: 10;
+  -webkit-tap-highlight-color: transparent;
+}
+.cart-add-btn:hover { transform: scale(1.12); box-shadow: 0 6px 20px var(--accent-glow); }
+.cart-add-btn:active { transform: scale(0.95); }
+.cart-qty-row {
+  position: absolute; bottom: 10px; right: 10px;
+  display: inline-flex; align-items: center; gap: 2px;
+  background: var(--accent-grad);
+  border-radius: 50px;
+  padding: 3px 4px;
+  box-shadow: 0 4px 14px var(--accent-glow);
+  z-index: 10;
+  animation: badgePop 0.3s var(--ease);
+}
+.qty-ctrl {
+  width: 26px; height: 26px;
+  border: none; background: rgba(0,0,0,0.15); color: #1a0f0a;
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+.qty-ctrl:hover { background: rgba(0,0,0,0.28); }
+.qty-ctrl:active { transform: scale(0.9); }
+.qty-num {
+  min-width: 22px; text-align: center;
+  font-size: 13px; font-weight: 800; color: #1a0f0a;
+}
+/* gallery mode cart btn */
+.gallery-mode .cart-add-btn,
+.gallery-mode .cart-qty-row { bottom: 12px; right: 12px; }
+
+/* --- VEG / NON-VEG NEON SVG ICONS --- */
+.veg-box { fill: none; stroke: #22c55e; stroke-width: 2.5; animation: vegPulse 3s ease-in-out infinite, iconFlicker 7s ease-in-out infinite 2s; }
+.veg-dot { fill: #22c55e; animation: dotPulse 3s ease-in-out infinite; }
+@keyframes vegPulse { 0%,100%{filter:drop-shadow(0 0 2px #22c55e) drop-shadow(0 0 5px rgba(34,197,94,.35));} 50%{filter:drop-shadow(0 0 3px #22c55e) drop-shadow(0 0 9px rgba(34,197,94,.5));} }
+@keyframes dotPulse { 0%,100%{filter:drop-shadow(0 0 3px #22c55e) drop-shadow(0 0 6px rgba(34,197,94,.4));} 50%{filter:drop-shadow(0 0 4px #22c55e) drop-shadow(0 0 10px rgba(34,197,94,.55));} }
+.nv-box { fill: none; stroke: #ef4444; stroke-width: 2.5; animation: nvPulse 3s ease-in-out infinite, iconFlicker 7s ease-in-out infinite 2s; }
+.nv-tri { fill: #ef4444; animation: triPulse 3s ease-in-out infinite; }
+@keyframes nvPulse { 0%,100%{filter:drop-shadow(0 0 2px #ef4444) drop-shadow(0 0 5px rgba(239,68,68,.35));} 50%{filter:drop-shadow(0 0 3px #ef4444) drop-shadow(0 0 9px rgba(239,68,68,.5));} }
+@keyframes triPulse { 0%,100%{filter:drop-shadow(0 0 3px #ef4444) drop-shadow(0 0 6px rgba(239,68,68,.4));} 50%{filter:drop-shadow(0 0 4px #ef4444) drop-shadow(0 0 10px rgba(239,68,68,.55));} }
+@keyframes iconFlicker { 0%,89%,91%,100%{opacity:1;} 90%{opacity:.5;} }
+
+/* diet badge on detail image (top right) */
+.detail-diet-badge {
+  position: absolute;
+  top: 14px;
+  right: 24px;
+  z-index: 10;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+}
+
+/* ingredients label inside desc-box */
+.ing-inside-label {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--accent-dim); margin-top: 16px; margin-bottom: 10px;
+}
+/* ingredients-row inside desc-box: no max-height, natural flex-wrap */
+.desc-box .ingredients-row {
+  max-height: none;
+  margin-bottom: 0;
+  padding: 0;
+  animation: none;
+}
 
 /* --- GLOBAL TAP HIGHLIGHT + SELECTION FIX --- */
 a { -webkit-tap-highlight-color: transparent; }

@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 };
 
 const themeBootScript = `
-(function(){try{var saved=localStorage.getItem('lfh_theme');var t=(saved==='dark'||saved==='light')?saved:'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();
+(function(){try{var saved=localStorage.getItem('lfh_theme');var t;if(saved==='dark'||saved==='light'){t=saved;}else{t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();
 `.trim();
 
 export default function RootLayout({

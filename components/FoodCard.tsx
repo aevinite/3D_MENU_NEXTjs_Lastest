@@ -4,6 +4,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
+import VegIcon from "./VegIcon";
 
 interface FoodItem {
   id: string;
@@ -19,52 +20,62 @@ interface FoodItem {
   time?: string;
 }
 
-const FAV_KEY = "lfh-favorites";
+const CART_KEY = "lfh_cart";
 
-const readFavorites = (): string[] => {
-  if (typeof localStorage === "undefined") return [];
+interface CartItem { id: string; title: string; price: string; image: string; qty: number; }
+
+const readCart = (): CartItem[] => {
   try {
-    const raw = localStorage.getItem(FAV_KEY);
+    const raw = localStorage.getItem(CART_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 };
 
-const writeFavorites = (ids: string[]) => {
+const writeCart = (cart: CartItem[]) => {
   try {
-    localStorage.setItem(FAV_KEY, JSON.stringify(ids));
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    window.dispatchEvent(new Event("lfh:cart-updated"));
   } catch {}
 };
 
 export default function FoodCard({ item, index, viewingCategory }: { item: FoodItem; index: number; viewingCategory?: string }) {
-  const [favorited, setFavorited] = useState(false);
+  const [cartQty, setCartQty] = useState(0);
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
 
+  const syncQty = () => {
+    const found = readCart().find(i => i.id === item.id);
+    setCartQty(found?.qty ?? 0);
+  };
+
   useEffect(() => {
-    setFavorited(readFavorites().includes(item.id));
+    syncQty();
     setCurrencyState(getCurrency());
-    const onFav = () => setFavorited(readFavorites().includes(item.id));
+    const onCart = () => syncQty();
     const onCur = () => setCurrencyState(getCurrency());
-    window.addEventListener("lfh:favorites-updated", onFav);
+    window.addEventListener("lfh:cart-updated", onCart);
     window.addEventListener("lfh:currency-changed", onCur);
     return () => {
-      window.removeEventListener("lfh:favorites-updated", onFav);
+      window.removeEventListener("lfh:cart-updated", onCart);
       window.removeEventListener("lfh:currency-changed", onCur);
     };
   }, [item.id]);
 
-  const toggleFavorite = (e: MouseEvent<HTMLButtonElement>) => {
+  const updateQty = (e: MouseEvent, delta: number) => {
     e.preventDefault();
     e.stopPropagation();
-    const current = readFavorites();
-    const next = current.includes(item.id)
-      ? current.filter((id) => id !== item.id)
-      : [...current, item.id];
-    writeFavorites(next);
-    setFavorited(next.includes(item.id));
-    window.dispatchEvent(new Event("lfh:favorites-updated"));
+    const cart = readCart();
+    const idx = cart.findIndex(i => i.id === item.id);
+    const newQty = (idx >= 0 ? cart[idx].qty : 0) + delta;
+    if (newQty <= 0) {
+      writeCart(cart.filter(i => i.id !== item.id));
+    } else if (idx >= 0) {
+      cart[idx].qty = newQty;
+      writeCart(cart);
+    } else {
+      writeCart([...cart, { id: item.id, title: item.title, price: item.price, image: item.image, qty: newQty }]);
+    }
+    setCartQty(Math.max(0, newQty));
   };
 
   return (
@@ -73,9 +84,6 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
         className={`item-card fade-in ${item.is4d ? "is-4d" : ""}`}
         style={{ animationDelay: `${index * 0.06}s` }}
       >
-        <div className="diet-badge" aria-hidden="true">
-          {item.veg ? "🌿" : "🥩"}
-        </div>
         <div className="thumb-wrapper">
           <Image
             className="dish-thumb"
@@ -95,24 +103,37 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
         <div className="dish-info">
           <div className="dish-name">
             {item.title}
-            {item.is4d ? (
-              <i className="fas fa-cube dish-4d-icon"></i>
-            ) : null}
+            {item.is4d ? <i className="fas fa-cube dish-4d-icon"></i> : null}
           </div>
           <div className="dish-meta">
             {item.rating || "4.8"} ★ • {item.time || "25-30 min"}
           </div>
           <div className="dish-price">{currency ? formatPrice(item.price, currency) : `$${item.price}`}</div>
         </div>
-        <button
-          type="button"
-          className={`favorite-btn ${favorited ? "active" : ""}`}
-          aria-label={favorited ? `Remove ${item.title} from favorites` : `Save ${item.title} to favorites`}
-          aria-pressed={favorited}
-          onClick={toggleFavorite}
-        >
-          <i className={`${favorited ? "fas" : "far"} fa-heart`}></i>
-        </button>
+
+        <div className="diet-badge" aria-hidden="true">
+          <VegIcon isVeg={item.veg} size={18} />
+        </div>
+        {cartQty === 0 ? (
+          <button
+            type="button"
+            className="cart-add-btn"
+            onClick={(e) => updateQty(e, 1)}
+            aria-label={`Add ${item.title} to cart`}
+          >
+            <i className="fas fa-plus"></i>
+          </button>
+        ) : (
+          <div className="cart-qty-row">
+            <button type="button" className="qty-ctrl" onClick={(e) => updateQty(e, -1)} aria-label="Remove one">
+              <i className="fas fa-minus"></i>
+            </button>
+            <span className="qty-num">{cartQty}</span>
+            <button type="button" className="qty-ctrl" onClick={(e) => updateQty(e, 1)} aria-label="Add one">
+              <i className="fas fa-plus"></i>
+            </button>
+          </div>
+        )}
       </div>
     </Link>
   );

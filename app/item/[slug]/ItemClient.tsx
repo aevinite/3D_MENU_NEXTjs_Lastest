@@ -8,6 +8,7 @@ import InfinityLoader from "@/components/InfinityLoader";
 import { modelLoader } from "@/lib/modelLoader";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n";
+import VegIcon from "@/components/VegIcon";
 
 interface FoodItem {
   id: string;
@@ -356,6 +357,9 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
         />
         <div className="detail-img-overlay"></div>
         <span className="img-zoom-hint"><i className="fas fa-expand-alt"></i></span>
+        <span className="detail-diet-badge">
+          <VegIcon isVeg={item.veg} size={28} />
+        </span>
       </div>
 
       {imgZoom && (
@@ -463,45 +467,6 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
           </div>
         </div>
 
-        <div className="section-label">{t.ingredients}</div>
-        <div className="ingredients-row" id="tags-row">
-          {item.ingredients.map((t, i) => {
-            if (!emojiIndexMap[t.emoji]) emojiIndexMap[t.emoji] = 0;
-            const colorOptions = colorMap[t.emoji as keyof typeof colorMap] || [{ bg: 'rgba(212, 165, 116, 0.15)', border: '#D4A574', glow: 'rgba(212, 165, 116, 0.4)' }];
-            const colors = colorOptions[emojiIndexMap[t.emoji] % colorOptions.length];
-            emojiIndexMap[t.emoji]++;
-            
-            const isLightTheme = theme === 'light';
-            let textColor = colors.border;
-            let borderColor = colors.border;
-            if (isLightTheme && (colors as any).lightBorder && (colors as any).lightText) {
-              borderColor = (colors as any).lightBorder;
-              textColor = (colors as any).lightText;
-            }
-            
-            return (
-              <div
-                key={i}
-                className="ing-tag"
-                style={{
-                  background: colors.bg,
-                  border: `1px solid ${borderColor}`,
-                  color: textColor,
-                  ['--ing-glow' as any]: colors.glow,
-                }}
-                onMouseOver={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 18px ${colors.glow}`;
-                }}
-                onMouseOut={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.boxShadow = "";
-                }}
-              >
-                {t.emoji} {t.name}
-              </div>
-            );
-          })}
-        </div>
-
         <div className="section-label">{t.aboutDish}</div>
         <div className="desc-box">
           <p id="detail-desc" className={`detail-desc ${descExpanded ? 'expanded' : ''}`}>
@@ -510,6 +475,33 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
           <span id="desc-toggle" className="desc-toggle" onClick={() => setDescExpanded(!descExpanded)}>
             {descExpanded ? t.readLess : t.readMore}
           </span>
+          {descExpanded && <div className="ing-inside-label">{t.ingredients}</div>}
+          {descExpanded && <div className="ingredients-row" id="tags-row">
+            {item.ingredients.map((ingItem, i) => {
+              if (!emojiIndexMap[ingItem.emoji]) emojiIndexMap[ingItem.emoji] = 0;
+              const colorOptions = colorMap[ingItem.emoji as keyof typeof colorMap] || [{ bg: 'rgba(212, 165, 116, 0.15)', border: '#D4A574', glow: 'rgba(212, 165, 116, 0.4)' }];
+              const colors = colorOptions[emojiIndexMap[ingItem.emoji] % colorOptions.length];
+              emojiIndexMap[ingItem.emoji]++;
+              const isLightTheme = theme === 'light';
+              let textColor = colors.border;
+              let borderColor = colors.border;
+              if (isLightTheme && (colors as any).lightBorder && (colors as any).lightText) {
+                borderColor = (colors as any).lightBorder;
+                textColor = (colors as any).lightText;
+              }
+              return (
+                <div
+                  key={i}
+                  className="ing-tag"
+                  style={{ background: colors.bg, border: `1px solid ${borderColor}`, color: textColor, ['--ing-glow' as any]: colors.glow }}
+                  onMouseOver={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 18px ${colors.glow}`; }}
+                  onMouseOut={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = ""; }}
+                >
+                  {ingItem.emoji} {ingItem.name}
+                </div>
+              );
+            })}
+          </div>}
         </div>
 
         <div className="btn-row">
