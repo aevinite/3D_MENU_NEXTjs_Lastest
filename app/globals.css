@@ -581,12 +581,13 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 12px rgba(6, 182, 212, 0.4); } 50% { box-shadow: 0 0 24px rgba(6, 182, 212, 0.2); } }
 .diet-badge {
-  position: absolute; top: 19px; right: 19px;
+  position: absolute; top: 14px; right: 19px;
   font-size: 20px;
   transition: all 0.3s var(--ease);
   z-index: 10;
   filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
 }
+.diet-badge svg { width: 22px; height: 22px; }
 .item-card:hover .diet-badge { 
   transform: scale(1.3); 
   filter: drop-shadow(0 0 8px var(--accent));
@@ -2192,6 +2193,8 @@ a *:active,
 /* gallery mode cart btn */
 .gallery-mode .cart-add-btn,
 .gallery-mode .cart-qty-row { bottom: 12px; right: 12px; }
+/* gallery mode: veg icon at 25/25 */
+.gallery-mode .diet-badge { top: 25px; right: 25px; }
 
 /* --- VEG / NON-VEG NEON SVG ICONS --- */
 .veg-box { fill: none; stroke: #22c55e; stroke-width: 2.5; animation: vegPulse 3s ease-in-out infinite, iconFlicker 7s ease-in-out infinite 2s; }
