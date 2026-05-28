@@ -96,10 +96,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
           <div className="dish-name">
             {item.title}
             {item.is4d ? (
-              <i
-                className="fas fa-cube"
-                style={{ fontSize: "11px", color: "var(--accent)" }}
-              ></i>
+              <i className="fas fa-cube dish-4d-icon"></i>
             ) : null}
           </div>
           <div className="dish-meta">

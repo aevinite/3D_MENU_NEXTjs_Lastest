@@ -152,9 +152,6 @@ export default function MenuPage() {
             />
           </div>
           <div className="header-controls">
-            <div className="current-cat" id="current-cat">
-              {categories.find((c) => c.id === currentCategory)?.name || t.catAll}
-            </div>
             <div className="controls-group">
               <div className="filter-row" role="group" aria-label="Dietary filter">
                 <button
