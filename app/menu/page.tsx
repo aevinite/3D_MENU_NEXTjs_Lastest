@@ -153,7 +153,8 @@ export default function MenuPage() {
   const matchesSearch = (i: FoodItem) =>
     i.title.toLowerCase().includes(q) ||
     i.category.toLowerCase().includes(q) ||
-    catNameOf(i.category).includes(q);
+    catNameOf(i.category).includes(q) ||
+    (i.searchAlias || "").toLowerCase().includes(q);
 
   const visibleItems = menuData.filter((item) => {
     // While searching, the list becomes a global "all view" (every category),

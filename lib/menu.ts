@@ -32,6 +32,7 @@ export interface MenuItem {
   relatedSlugs: string[];
   tags: string[];
   allergens: string[];
+  searchAlias: string; // hidden synonyms for search (e.g. "caesar, healthy")
 }
 
 // A label that exists in several languages, e.g. { en: "Burgers", de: "Burger" }.
@@ -85,6 +86,7 @@ function mapRow(row: any): MenuItem {
     relatedSlugs: row.related_slugs ?? [],
     tags: row.tags ?? [],
     allergens: row.allergens ?? [],
+    searchAlias: row.search_alias ?? "",
   };
 }
 
@@ -98,6 +100,15 @@ export interface OrderInput {
   total: number;
   allergies: string[];
 }
+// Guest taps "Call a Waiter" — inserts a row the restaurant sees live in the editor.
+export async function callWaiter(tableNumber: string, note?: string): Promise<void> {
+  const { error } = await supabase.from("waiter_calls").insert({
+    table_number: tableNumber || null,
+    note: note || null,
+  });
+  if (error) throw new Error(`Call failed: ${error.message}`);
+}
+
 // Order lifecycle status. The restaurant advances received -> preparing -> served.
 export type OrderStatus = "received" | "preparing" | "served" | "cancelled";
 
