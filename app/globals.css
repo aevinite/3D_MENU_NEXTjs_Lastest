@@ -187,6 +187,16 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 }
 .table-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow); }
 .table-input-error { border-color: #ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,0.25) !important; animation: tableShake 0.4s; }
+/* quick service-request reasons in the "Need something?" popup */
+.chef-reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.chef-reason {
+  display: flex; align-items: center; gap: 9px; padding: 13px 14px; border-radius: 14px;
+  background: rgba(212,165,116,0.08); border: 1px solid rgba(212,165,116,0.3);
+  color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.15s;
+}
+.chef-reason:hover { background: var(--accent); border-color: var(--accent); color: #2a1d0c; }
+.chef-reason:disabled { opacity: 0.5; cursor: default; }
+.chef-reason-icon { font-size: 18px; }
 /* cart: Bill / Previous-orders tabs + history list */
 .cart-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
 .cart-tabs button {
@@ -715,9 +725,18 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   .item-card:hover .diet-badge { transform: none; }
   .item-card:hover .dish-price { transform: none; }
 }
-.item-card.is-4d { 
+.item-card.is-4d {
   box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
   border-color: rgba(6, 182, 212, 0.4);
+}
+/* "Not available right now" — greyed, can't add, but still viewable */
+.item-card.sold-out { opacity: 0.5; filter: grayscale(0.5); }
+.item-card.sold-out .dish-price { color: var(--muted); }
+.sold-out-pill {
+  position: absolute; bottom: 14px; right: 14px;
+  padding: 7px 13px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  background: rgba(120,120,120,0.18); color: var(--muted);
+  border: 1px solid rgba(150,150,150,0.3); white-space: nowrap;
 }
 .item-card.is-4d:hover { 
   box-shadow: 0 0 30px var(--accent-glow), 0 16px 40px rgba(0,0,0,0.4);

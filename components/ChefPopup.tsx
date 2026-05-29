@@ -21,10 +21,19 @@ export default function ChefPopup() {
     };
   }, []);
 
-  const handleSend = async () => {
+  const REASONS = [
+    { icon: "🙋", label: "Call waiter" },
+    { icon: "💧", label: "Water" },
+    { icon: "🍴", label: "Cutlery" },
+    { icon: "🧻", label: "Napkins" },
+    { icon: "🧹", label: "Clean table" },
+    { icon: "🧾", label: "Bring the bill" },
+  ];
+
+  const handleSend = async (reason: string) => {
     if (sending) return;
     if (!tableNumber.trim()) {
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Please enter your table number." } }));
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Please enter your table number first." } }));
       const el = document.getElementById("chef-table") as HTMLInputElement | null;
       el?.focus();
       el?.classList.add("table-input-error");
@@ -33,8 +42,8 @@ export default function ChefPopup() {
     }
     setSending(true);
     try {
-      await callWaiter(tableNumber.trim());
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Waiter called — someone's on the way! 👨‍🍳" } }));
+      await callWaiter(tableNumber.trim(), reason);
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: `Sent: ${reason} — someone's on the way! 👨‍🍳` } }));
       window.dispatchEvent(new Event("lfh:close-all"));
       setTableNumber("");
     } catch {
@@ -52,10 +61,10 @@ export default function ChefPopup() {
       <div id="chef-popup" className="popup active">
         <i className="fas fa-bell-concierge" style={{ fontSize: "48px", color: "var(--accent)" }}></i>
         <h2 style={{ fontFamily: "Playfair Display", color: "var(--text)", margin: "18px 0 8px", fontSize: "24px", fontWeight: 700 }}>
-          Call a Waiter?
+          Need something?
         </h2>
-        <p style={{ color: "var(--muted)", fontSize: "14px", margin: "0 0 24px" }}>
-          Please enter your table number
+        <p style={{ color: "var(--muted)", fontSize: "14px", margin: "0 0 16px" }}>
+          Enter your table number, then tap what you need
         </p>
         <input
           type="text"
@@ -67,9 +76,20 @@ export default function ChefPopup() {
           value={tableNumber}
           onChange={(e) => setTableNumber(e.target.value)}
         />
-        <button className="btn btn-gold" onClick={handleSend} disabled={sending}>
-          {sending ? "Sending…" : "Send Request"}
-        </button>
+        <div className="chef-reasons">
+          {REASONS.map((r) => (
+            <button
+              key={r.label}
+              type="button"
+              className="chef-reason"
+              disabled={sending}
+              onClick={() => handleSend(r.label)}
+            >
+              <span className="chef-reason-icon">{r.icon}</span>
+              {r.label}
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );

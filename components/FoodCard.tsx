@@ -18,6 +18,7 @@ interface FoodItem {
   modelFolder?: string;
   rating?: string;
   time?: string;
+  tags?: string[];
 }
 
 const CART_KEY = "lfh_cart";
@@ -89,10 +90,12 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
     setCartQty(Math.max(0, newQty));
   };
 
+  const soldOut = (item.tags || []).includes("sold-out");
+
   return (
     <Link href={`/item/${item.slug}${viewingCategory ? `?cat=${viewingCategory}` : ""}`} className="item-card-link">
       <div
-        className={`item-card fade-in ${item.is4d ? "is-4d" : ""}`}
+        className={`item-card fade-in ${item.is4d ? "is-4d" : ""} ${soldOut ? "sold-out" : ""}`}
         style={{ animationDelay: `${index * 0.06}s` }}
       >
         <div className={`thumb-wrapper ${imgLoaded ? "img-ready" : "img-loading"}`} ref={thumbRef}>
@@ -125,7 +128,14 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
         <div className="diet-badge" aria-hidden="true">
           <VegIcon isVeg={item.veg} size={18} />
         </div>
-        {cartQty === 0 ? (
+        {soldOut ? (
+          <span
+            className="sold-out-pill"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            Not available
+          </span>
+        ) : cartQty === 0 ? (
           <button
             type="button"
             className="cart-add-btn"
