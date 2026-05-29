@@ -6,7 +6,7 @@
 // is wrong.
 //
 // Usage (manual):
-//   $env:SUPABASE_URL = "https://cstpqxvsurtzrwwjzyoj.supabase.co"
+//   $env:SUPABASE_URL = "https://klnohzowlmbumvvzddya.supabase.co"
 //   $env:SUPABASE_SERVICE_ROLE_KEY = "ey..."   # NEVER commit this key
 //   node scripts/set-glb-cache.mjs
 //
