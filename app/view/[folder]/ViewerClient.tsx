@@ -218,11 +218,16 @@ export default function ViewerClient({ folder }: { folder: string }) {
 
   useEffect(() => {
     if (loading || error) return;
+    // Only fall back to the "taking longer" overlay if the model genuinely
+    // hasn't arrived after a generous window. The small GLB (~2 MB) can still
+    // be downloading on a cold/slow first visit (the menu only preheats the
+    // small model now, not the heavy optimized one), and the InfinityLoader
+    // stays on screen meanwhile — so 6 s was too eager and looked like a failure.
     const t = setTimeout(() => {
       if (!modelSeenRef.current) {
         setShowTryAgain(true);
       }
-    }, 6000);
+    }, 15000);
     return () => clearTimeout(t);
   }, [loading, error]);
 
