@@ -19,10 +19,15 @@ export default function IntroSplash() {
       setDone(true);
       window.dispatchEvent(new Event("lfh:intro-done")); // cue the hero text
     };
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    // Play the intro only ONCE per visit — not every time the menu re-mounts
+    // (e.g. coming back from a dish page). A full refresh / new tab plays it again.
+    let seen = false;
+    try { seen = sessionStorage.getItem("lfh_intro_seen") === "1"; } catch {}
+    if (seen || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       finish();
       return;
     }
+    try { sessionStorage.setItem("lfh_intro_seen", "1"); } catch {}
     const ctx = gsap.context(() => {
       const tl = gsap.timeline();
       tl.timeScale(1.25); // 25% faster

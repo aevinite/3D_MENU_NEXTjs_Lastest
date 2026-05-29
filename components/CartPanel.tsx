@@ -37,6 +37,7 @@ export default function CartPanel() {
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const [allergenMap, setAllergenMap] = useState<Record<string, string[]>>({});
   const [declared, setDeclared] = useState<string[]>([]); // allergens the diner avoids
+  const [otherAllergy, setOtherAllergy] = useState(""); // free-text allergy not in the list
   const [placing, setPlacing] = useState(false);
 
   const loadCart = () => {
@@ -117,17 +118,18 @@ export default function CartPanel() {
     if (cart.length === 0 || placing) return;
     setPlacing(true);
     try {
+      const allergies = [...declared, ...(otherAllergy.trim() ? [otherAllergy.trim()] : [])];
       await createOrder({
         tableNumber,
         items: cart.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty })),
         subtotal,
         tax,
         total,
-        allergies: declared,
+        allergies,
       });
       const msg = tableNumber.trim() ? `Order placed for table ${tableNumber.trim()}! 🎉` : "Order placed! 🎉";
       window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: msg } }));
-      setCart([]); saveCart([]); setTableNumber(""); setDeclared([]);
+      setCart([]); saveCart([]); setTableNumber(""); setDeclared([]); setOtherAllergy("");
       window.dispatchEvent(new Event("lfh:cart-updated"));
       window.dispatchEvent(new Event("lfh:close-all"));
     } catch {
@@ -210,6 +212,15 @@ export default function CartPanel() {
                   </button>
                 ))}
               </div>
+              <input
+                type="text"
+                className="table-input"
+                style={{ marginTop: "10px", marginBottom: 0 }}
+                placeholder="Other? Type any allergy not listed"
+                aria-label="Other allergy"
+                value={otherAllergy}
+                onChange={(e) => setOtherAllergy(e.target.value)}
+              />
               {orderDeclaredHits.length > 0 && (
                 <div className="allergy-warning">
                   <i className="fas fa-triangle-exclamation"></i> Heads up — your order contains{" "}

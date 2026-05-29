@@ -42,7 +42,6 @@ export default function ViewerClient({ folder }: { folder: string }) {
   const [error, setError] = useState<string | null>(null);
   const [barVisible, setBarVisible] = useState(false);
   const [loaderVisible, setLoaderVisible] = useState(true);
-  const [dblHintVisible, setDblHintVisible] = useState(true);
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [showTryAgain, setShowTryAgain] = useState(false);
   const mvRef = useRef<ModelViewerElement>(null);
@@ -132,9 +131,7 @@ export default function ViewerClient({ folder }: { folder: string }) {
       setTimeout(() => {
         setBarVisible(true);
       }, 1000);
-      setTimeout(() => {
-        setDblHintVisible(false);
-      }, 5000);
+      // keep the "triple-tap to replay" hint visible as a persistent cue
       if (!startedRef.current) {
         startedRef.current = true;
         setTimeout(runFullSequence, 800);
@@ -316,6 +313,32 @@ export default function ViewerClient({ folder }: { folder: string }) {
     }
   };
 
+  // Triple-tap / triple-click the model to replay the reveal animation.
+  // (AR replays it automatically on entry via the ar-status handler above.)
+  useEffect(() => {
+    if (loading || error) return;
+    const target = mvRef.current;
+    if (!target) return;
+    let clicks = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onTap = () => {
+      clicks += 1;
+      if (clicks >= 3) {
+        clicks = 0;
+        if (timer) { clearTimeout(timer); timer = null; }
+        runFullSequence();
+      } else {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => { clicks = 0; }, 600);
+      }
+    };
+    target.addEventListener("click", onTap);
+    return () => {
+      target.removeEventListener("click", onTap);
+      if (timer) clearTimeout(timer);
+    };
+  }, [loading, error, activeUrl]);
+
   if (loading) {
     return (
       <div className="viewer-wrapper">
@@ -376,12 +399,7 @@ export default function ViewerClient({ folder }: { folder: string }) {
         </div>
       </div>
 
-      <div
-        id="dbl-hint"
-        style={{ opacity: dblHintVisible ? 1 : 0 }}
-      >
-        Double tap to reset view
-      </div>
+      <div id="dbl-hint">👆 Triple-tap to replay animation</div>
 
       {config && activeUrl && (
         <PublicModelViewer

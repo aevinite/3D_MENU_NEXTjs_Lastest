@@ -92,7 +92,6 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
             width={110}
             height={110}
             sizes="(max-width: 600px) 86px, 110px"
-            unoptimized
           />
           {item.is4d ? (
             <div className="badge-4d">
