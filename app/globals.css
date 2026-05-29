@@ -378,6 +378,10 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 
 /* --- HERO --- */
 .hero { position: relative; width: 100%; padding: 30px 20px; text-align: center; }
+/* letter-by-letter hero reveal (GSAP drives these spans) */
+.hero-title-wrap .greet-badge span,
+.hero-title-wrap .hero-title span { display: inline-block; white-space: pre; }
+.hero-title-wrap .greet-badge { animation: none; } /* GSAP controls the entrance */
 /* LFH logo sitting where the search magnifying glass used to be */
 .search-logo {
   position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
@@ -556,6 +560,7 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 .controls-group { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; justify-content: flex-end; }
 .filter-row { display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; padding: 8px 2px; }
 .filter-row::-webkit-scrollbar { display: none; }
+.chip-divider { width: 1px; height: 22px; align-self: center; flex: none; margin: 0 4px; background: rgba(212,165,116,0.3); border-radius: 1px; }
 .filter-chip {
   padding: 6px 10px;
   min-width: 48px;

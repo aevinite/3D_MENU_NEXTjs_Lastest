@@ -220,13 +220,39 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
       });
   }, [slug]);
 
+  // Background preload: this dish's model first, then the next & previous dishes
+  // in the category (their GLBs + images), so moving between dishes — and opening
+  // the 3D view — feels instant. Downloads run through the singleton loader.
   useEffect(() => {
-    if (!item?.is4d) return;
+    if (!item) return;
     const urls: string[] = [];
-    if (item.modelSmallUrl) urls.push(item.modelSmallUrl);
-    if (item.modelOptimizedUrl) urls.push(item.modelOptimizedUrl);
+    const queue4d = (it?: FoodItem | null) => {
+      if (!it?.is4d) return;
+      if (it.modelSmallUrl) urls.push(it.modelSmallUrl);
+      if (it.modelOptimizedUrl) urls.push(it.modelOptimizedUrl);
+    };
+    const preloadImg = (it?: FoodItem | null) => {
+      if (it?.image) {
+        const im = new window.Image();
+        im.src = it.image;
+      }
+    };
+    queue4d(item); // current dish first
+    if (allItems.length) {
+      const navCat = fromCat || item.category;
+      const sibs = navCat === "all" ? allItems : allItems.filter((it) => it.category === navCat);
+      const i = sibs.findIndex((it) => it.slug === item.slug);
+      if (i >= 0) {
+        const next = i < sibs.length - 1 ? sibs[i + 1] : null;
+        const prev = i > 0 ? sibs[i - 1] : null;
+        queue4d(next); // next is the most likely move
+        queue4d(prev);
+        preloadImg(next);
+        preloadImg(prev);
+      }
+    }
     if (urls.length) modelLoader.prioritize(urls);
-  }, [item]);
+  }, [item, allItems, fromCat]);
 
   const getReviewCount = () => {
     if (!item) return 12;
@@ -616,30 +642,36 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
           const navCat = fromCat || item.category;
           const siblings = navCat === "all" ? allItems : allItems.filter((it) => it.category === navCat);
           const idx = siblings.findIndex((it) => it.slug === item.slug);
-          if (idx < 0 || siblings.length < 2) return null;
-          const prev = siblings[(idx - 1 + siblings.length) % siblings.length];
-          const next = siblings[(idx + 1) % siblings.length];
+          if (idx < 0) return null;
+          // No wrap-around: hide the arrow when there's nothing before/after.
+          const prev = idx > 0 ? siblings[idx - 1] : null;
+          const next = idx < siblings.length - 1 ? siblings[idx + 1] : null;
+          if (!prev && !next) return null;
           const catParam = navCat !== item.category ? `?cat=${navCat}` : "";
           return (
             <>
-              <Link
-                href={`/item/${prev.slug}${catParam}`}
-                className="dish-nav-strip prev"
-                title={prev.title}
-                aria-label={`${t.previous}: ${prev.title}`}
-              >
-                <i className="fas fa-chevron-left"></i>
-                <i className="fas fa-chevron-left"></i>
-              </Link>
-              <Link
-                href={`/item/${next.slug}${catParam}`}
-                className="dish-nav-strip next"
-                title={next.title}
-                aria-label={`${t.next}: ${next.title}`}
-              >
-                <i className="fas fa-chevron-right"></i>
-                <i className="fas fa-chevron-right"></i>
-              </Link>
+              {prev && (
+                <Link
+                  href={`/item/${prev.slug}${catParam}`}
+                  className="dish-nav-strip prev"
+                  title={prev.title}
+                  aria-label={`${t.previous}: ${prev.title}`}
+                >
+                  <i className="fas fa-chevron-left"></i>
+                  <i className="fas fa-chevron-left"></i>
+                </Link>
+              )}
+              {next && (
+                <Link
+                  href={`/item/${next.slug}${catParam}`}
+                  className="dish-nav-strip next"
+                  title={next.title}
+                  aria-label={`${t.next}: ${next.title}`}
+                >
+                  <i className="fas fa-chevron-right"></i>
+                  <i className="fas fa-chevron-right"></i>
+                </Link>
+              )}
             </>
           );
         })()}

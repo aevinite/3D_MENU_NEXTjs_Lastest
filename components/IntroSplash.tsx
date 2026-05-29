@@ -15,8 +15,12 @@ export default function IntroSplash() {
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    const finish = () => {
       setDone(true);
+      window.dispatchEvent(new Event("lfh:intro-done")); // cue the hero text
+    };
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      finish();
       return;
     }
     const ctx = gsap.context(() => {
@@ -32,7 +36,7 @@ export default function IntroSplash() {
     }, root);
     // Dismiss via a timer (not the timeline's onComplete) so React StrictMode's
     // mount/cleanup/mount in dev can't leave the splash stuck in the DOM.
-    const timer = setTimeout(() => setDone(true), 2300);
+    const timer = setTimeout(finish, 2300);
     return () => {
       clearTimeout(timer);
       ctx.revert();

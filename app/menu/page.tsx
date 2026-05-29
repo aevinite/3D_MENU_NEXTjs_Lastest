@@ -3,53 +3,75 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import FoodCard from "@/components/FoodCard";
+import HeroTitle from "@/components/HeroTitle";
 import { modelLoader } from "@/lib/modelLoader";
 import {
   getMenuItems,
   getCategories,
-  getFilters,
   localized,
   type MenuItem,
   type Category,
-  type Filter,
 } from "@/lib/menu";
 import { useTranslation, useLanguage } from "@/lib/i18n";
 
 // The card list works with the full MenuItem shape from the data layer.
 type FoodItem = MenuItem;
 
+// Sort options (replace the old dietary filters). Each re-orders the list rather
+// than hiding dishes. Spice level is derived from the dish name/tags.
+const SORTS = [
+  { slug: "popular", label: "🔥 Popular" },
+  { slug: "top-rated", label: "⭐ Top Rated" },
+  { slug: "spicy", label: "🌶️ Spiciest" },
+  { slug: "price", label: "💲 Price" },
+];
+
+// Veg / Non-Veg are FILTERS (show only matching), driven by the dish veg flag.
+const DIETS = [
+  { slug: "veg", label: "🌿 Veg" },
+  { slug: "non-veg", label: "🍖 Non-Veg" },
+];
+
+const spiceLevel = (it: FoodItem) => {
+  const n = it.title.toLowerCase();
+  if (/tri chilli|piri|buffalo|jalape/.test(n)) return 3;
+  if (it.tags.includes("spicy")) return 2;
+  if (/spiced|chilli|pepper|hot/.test(n)) return 1;
+  return 0;
+};
+const ratingOf = (it: FoodItem) => parseFloat(it.rating) || 0;
+
 export default function MenuPage() {
   const t = useTranslation();
   const lang = useLanguage();
   const [menuData, setMenuData] = useState<FoodItem[]>([]);
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
-  const [dbFilters, setDbFilters] = useState<Filter[]>([]);
   const [currentCategory, setCurrentCategory] = useState("");
-  const [currentFilter, setCurrentFilter] = useState("all");
+  const [currentSort, setCurrentSort] = useState(""); // "" = recommended (menu order)
+  const [currentDiet, setCurrentDiet] = useState(""); // "" | "veg" | "non-veg"
   const [layout, setLayout] = useState("list");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Category bar — straight from the DB. One category is ALWAYS selected
-  // (no "All" option); clicking a category just switches to it.
-  const categories = dbCategories.map((c) => ({
-    slug: c.slug,
-    name: localized(c.name, lang),
-    icon: c.icon || "fa-utensils",
-    color: c.color || "#d4a574",
-  }));
-
-  // Filter chips — same idea, no "All" chip. Click the active one to clear it.
-  const filterChips = dbFilters.map((f) => ({
-    slug: f.slug,
-    label: `${f.icon ? f.icon + " " : ""}${localized(f.name, lang)}`,
-  }));
+  // Category bar — DB categories plus a curated "Chef's Special" tab (backed by
+  // the chef-special tag, not a real category). One category is ALWAYS selected.
+  const categories = [
+    ...dbCategories.map((c) => ({
+      slug: c.slug,
+      name: localized(c.name, lang),
+      icon: c.icon || "fa-utensils",
+      color: c.color || "#d4a574",
+    })),
+    { slug: "chef-special", name: "Chef's Special", icon: "fa-star", color: "#e8b884" },
+  ];
 
   // A category is ALWAYS selected — clicking just switches, never clears.
   const selectCategory = (slug: string) => setCurrentCategory(slug);
-  // Filters DO toggle: "all" is the sentinel for "no filter"; clicking the
-  // active filter clears back to all.
-  const toggleFilter = (slug: string) =>
-    setCurrentFilter((cur) => (cur === slug ? "all" : slug));
+  // Sort DOES toggle: clicking the active sort returns to the recommended order.
+  const toggleSort = (slug: string) =>
+    setCurrentSort((cur) => (cur === slug ? "" : slug));
+  // Diet filter toggles too (veg / non-veg are mutually exclusive).
+  const toggleDiet = (slug: string) =>
+    setCurrentDiet((cur) => (cur === slug ? "" : slug));
 
   useEffect(() => {
     getMenuItems()
@@ -62,9 +84,6 @@ export default function MenuPage() {
         setCurrentCategory((cur) => cur || cats[0]?.slug || "");
       })
       .catch((err) => console.error("Error loading categories:", err));
-    getFilters()
-      .then(setDbFilters)
-      .catch((err) => console.error("Error loading filters:", err));
   }, []);
 
   useEffect(() => {
@@ -92,25 +111,44 @@ export default function MenuPage() {
     );
   }, [menuData, currentCategory]);
 
-  const filteredItems = menuData.filter((item) => {
-    if (currentCategory && item.category !== currentCategory) {
+  const visibleItems = menuData.filter((item) => {
+    if (currentCategory === "chef-special") {
+      if (!item.tags.includes("chef-special")) return false;
+    } else if (currentCategory && item.category !== currentCategory) {
       return false;
     }
-    if (currentFilter !== "all" && !item.tags.includes(currentFilter)) {
-      return false;
-    }
+    if (currentDiet === "veg" && !item.veg) return false;
+    if (currentDiet === "non-veg" && item.veg) return false;
     if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
     return true;
   });
 
+  // Apply the chosen sort (a stable copy so the menu order stays the default).
+  const filteredItems = [...visibleItems].sort((a, b) => {
+    switch (currentSort) {
+      case "popular": {
+        const pa = a.tags.includes("bestseller") ? 1 : 0;
+        const pb = b.tags.includes("bestseller") ? 1 : 0;
+        return pb - pa || ratingOf(b) - ratingOf(a);
+      }
+      case "top-rated":
+        return ratingOf(b) - ratingOf(a);
+      case "spicy":
+        return spiceLevel(b) - spiceLevel(a) || ratingOf(b) - ratingOf(a);
+      case "price":
+        return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+      default:
+        return 0; // recommended = original menu order
+    }
+  });
+
   return (
     <AppShell>
       <div id="main-scroll">
         <div className="hero">
-          <span className="greet-badge">{t.greeting}</span>
-          <h2 className="hero-title">{t.heroTitle}</h2>
+          <HeroTitle greeting={t.greeting} title={t.heroTitle} />
         </div>
 
         <div className="section-header">
@@ -158,16 +196,28 @@ export default function MenuPage() {
           </div>
           <div className="header-controls">
             <div className="controls-group">
-              <div className="filter-row" role="group" aria-label="Dietary filter">
-                {filterChips.map((chip) => (
+              <div className="filter-row" role="group" aria-label="Filter and sort dishes">
+                {SORTS.map((s) => (
                   <button
-                    key={chip.slug}
+                    key={s.slug}
                     type="button"
-                    className={`filter-chip ${currentFilter === chip.slug ? "active" : ""}`}
-                    aria-pressed={currentFilter === chip.slug}
-                    onClick={() => toggleFilter(chip.slug)}
+                    className={`filter-chip ${currentSort === s.slug ? "active" : ""}`}
+                    aria-pressed={currentSort === s.slug}
+                    onClick={() => toggleSort(s.slug)}
                   >
-                    {chip.label}
+                    {s.label}
+                  </button>
+                ))}
+                <span className="chip-divider" aria-hidden="true"></span>
+                {DIETS.map((d) => (
+                  <button
+                    key={d.slug}
+                    type="button"
+                    className={`filter-chip ${currentDiet === d.slug ? "active" : ""}`}
+                    aria-pressed={currentDiet === d.slug}
+                    onClick={() => toggleDiet(d.slug)}
+                  >
+                    {d.label}
                   </button>
                 ))}
               </div>
