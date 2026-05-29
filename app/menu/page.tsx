@@ -204,7 +204,7 @@ export default function MenuPage() {
 
   return (
     <AppShell>
-      <div id="main-scroll">
+      <main id="main-scroll">
         <div className="hero">
           <HeroTitle greeting={t.greeting} title={t.heroTitle} />
         </div>
@@ -353,7 +353,7 @@ export default function MenuPage() {
                 <FoodCard key={item.id} item={item} index={index} viewingCategory={currentCategory} />
               ))}
         </div>
-      </div>
+      </main>
     </AppShell>
   );
 }

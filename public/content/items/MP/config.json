@@ -1,7 +1,7 @@
 {
-  "modelUrl": "https://klnohzowlmbumvvzddya.supabase.co/storage/v1/object/public/Models/Croissant/croissant_small.glb",
-  "smallUrl": "https://klnohzowlmbumvvzddya.supabase.co/storage/v1/object/public/Models/Croissant/croissant_small.glb",
-  "optimizedUrl": "https://klnohzowlmbumvvzddya.supabase.co/storage/v1/object/public/Models/Croissant/croissant-optimized.glb",
+  "modelUrl": "/models/croissant_small.glb",
+  "smallUrl": "/models/croissant_small.glb",
+  "optimizedUrl": "/models/croissant-optimized.glb",
   "title": "Croissant Sandwich",
   "subtitle": "Freshly Made · Signature Item",
   "stats": {

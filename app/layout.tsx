@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5, // allow pinch-zoom (accessibility) instead of locking it
+  userScalable: true,
   viewportFit: 'cover',
 };
 

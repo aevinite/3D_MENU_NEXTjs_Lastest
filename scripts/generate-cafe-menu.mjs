@@ -17,8 +17,8 @@ import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-const GLB_SMALL = "https://klnohzowlmbumvvzddya.supabase.co/storage/v1/object/public/Models/Croissant/croissant_small.glb";
-const GLB_OPTIMIZED = "https://klnohzowlmbumvvzddya.supabase.co/storage/v1/object/public/Models/Croissant/croissant-optimized.glb";
+const GLB_SMALL = "/models/croissant_small.glb";
+const GLB_OPTIMIZED = "/models/croissant-optimized.glb";
 
 const LFH = (f) => `https://littlefrenchhouse.in/restaurant/wp-content/uploads/2021/01/${f}`;
 const UNS = (id) => `https://images.unsplash.com/${id}?w=600&h=600&fit=crop`;

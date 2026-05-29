@@ -2,9 +2,9 @@ import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL || "http://localhost:3003";
 const SMALL =
-  "https://klnohzowlmbumvvzddya.supabase.co/storage/v1/object/public/Models/Croissant/croissant_small.glb";
+  "/models/croissant_small.glb";
 const OPT =
-  "https://klnohzowlmbumvvzddya.supabase.co/storage/v1/object/public/Models/Croissant/croissant-optimized.glb";
+  "/models/croissant-optimized.glb";
 
 const log = (...a) => console.log(...a);
 
