@@ -123,6 +123,19 @@ export async function createOrder(o: OrderInput): Promise<string> {
   return id;
 }
 
+// A guest corrects only their own order's table number (migration 007). Only
+// works while the order is still open (received/preparing); returns true on success.
+export async function updateOrderTableNumber(
+  id: string,
+  tableNumber: string
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("set_order_table_number", {
+    order_id: id,
+    new_table: tableNumber,
+  });
+  return !error && Array.isArray(data) && data.length > 0;
+}
+
 // A guest reads only their own order's status via a SECURITY DEFINER function
 // (migration 006), so no one can list everyone else's orders.
 export async function getOrderStatus(

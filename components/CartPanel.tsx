@@ -139,6 +139,7 @@ export default function CartPanel() {
           tableNumber: tableNumber.trim(),
           total,
           itemCount,
+          items: cart.map((it) => ({ title: it.title, qty: it.qty })),
           status: "received",
           placedAt: Date.now(),
         });

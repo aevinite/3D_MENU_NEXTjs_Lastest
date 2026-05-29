@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getOrderStatus, type OrderStatus } from "@/lib/menu";
+import { getOrderStatus, updateOrderTableNumber, type OrderStatus } from "@/lib/menu";
+import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 
 const KEY = "lfh_active_orders";
 const POLL_MS = 8000;
-// Stop following an order this long after it was placed (e.g. guest left).
+const SERVED_LINGER_MS = 60 * 1000; // served/cancelled strip stays one minute, then goes
 const MAX_AGE_MS = 3 * 60 * 60 * 1000;
 
 interface ActiveOrder {
@@ -13,12 +14,13 @@ interface ActiveOrder {
   tableNumber: string;
   total: number;
   itemCount: number;
+  items?: { title: string; qty: number }[];
   status: OrderStatus;
   placedAt: number;
+  finalizedAt?: number; // when we first saw it served/cancelled
   dismissed?: boolean;
 }
 
-// Friendly copy + a 0-based step for the progress bar (cancelled has no step).
 const STEPS: OrderStatus[] = ["received", "preparing", "served"];
 const COPY: Record<OrderStatus, { label: string; sub: string; icon: string }> = {
   received: { label: "Order received", sub: "Waiting for the kitchen to confirm…", icon: "fa-receipt" },
@@ -41,53 +43,54 @@ const write = (list: ActiveOrder[]) => {
     localStorage.setItem(KEY, JSON.stringify(list));
   } catch {}
 };
+const isFinal = (s: OrderStatus) => s === "served" || s === "cancelled";
 
 export default function OrderTracker() {
   const [orders, setOrders] = useState<ActiveOrder[]>([]);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [tableDraft, setTableDraft] = useState("");
+  const [savingTable, setSavingTable] = useState(false);
+  const [currency, setCurrency] = useState<CurrencyMeta | null>(null);
   const lastStatus = useRef<Record<string, OrderStatus>>({});
 
-  // Pull current state from storage into React.
   const refresh = () => setOrders(read());
 
   useEffect(() => {
     refresh();
+    setCurrency(getCurrency());
     const onPlaced = () => refresh();
+    const onCur = () => setCurrency(getCurrency());
     window.addEventListener("lfh:order-placed", onPlaced);
-    window.addEventListener("storage", onPlaced); // other tabs
+    window.addEventListener("storage", onPlaced);
+    window.addEventListener("lfh:currency-changed", onCur);
     return () => {
       window.removeEventListener("lfh:order-placed", onPlaced);
       window.removeEventListener("storage", onPlaced);
+      window.removeEventListener("lfh:currency-changed", onCur);
     };
   }, []);
 
   // Poll the kitchen for each order we're still following.
   useEffect(() => {
     let cancelled = false;
-
     const poll = async () => {
       const list = read();
       const live = list.filter(
-        (o) =>
-          !o.dismissed &&
-          o.status !== "served" &&
-          o.status !== "cancelled" &&
-          Date.now() - o.placedAt < MAX_AGE_MS
+        (o) => !o.dismissed && !isFinal(o.status) && Date.now() - o.placedAt < MAX_AGE_MS
       );
       if (live.length === 0) return;
-
       let changed = false;
       for (const o of live) {
         const res = await getOrderStatus(o.id);
         if (!res || cancelled) continue;
         if (res.status !== o.status) {
           o.status = res.status;
+          if (isFinal(res.status) && !o.finalizedAt) o.finalizedAt = Date.now();
           changed = true;
-          const prev = lastStatus.current[o.id];
-          if (prev !== res.status) {
+          if (lastStatus.current[o.id] !== res.status) {
             lastStatus.current[o.id] = res.status;
-            const c = COPY[res.status];
             window.dispatchEvent(
-              new CustomEvent("lfh:toast", { detail: { message: `${c.icon ? "🔔 " : ""}${c.label}` } })
+              new CustomEvent("lfh:toast", { detail: { message: `🔔 ${COPY[res.status].label}` } })
             );
           }
         }
@@ -97,7 +100,6 @@ export default function OrderTracker() {
         refresh();
       }
     };
-
     poll();
     const iv = setInterval(poll, POLL_MS);
     return () => {
@@ -106,47 +108,170 @@ export default function OrderTracker() {
     };
   }, [orders.length]);
 
+  // Auto-hide a served/cancelled strip one minute after it finishes.
+  useEffect(() => {
+    const finals = orders.filter((o) => isFinal(o.status) && o.finalizedAt && !o.dismissed);
+    if (finals.length === 0) return;
+    const soonest = Math.min(...finals.map((o) => (o.finalizedAt as number) + SERVED_LINGER_MS));
+    const delay = Math.max(0, soonest - Date.now());
+    const t = setTimeout(refresh, delay + 100);
+    return () => clearTimeout(t);
+  }, [orders]);
+
   const dismiss = (id: string) => {
-    const list = read().map((o) => (o.id === id ? { ...o, dismissed: true } : o));
-    write(list);
+    write(read().map((o) => (o.id === id ? { ...o, dismissed: true } : o)));
+    setDetailOpen(false);
     refresh();
   };
 
-  // Show the most recent order we haven't dismissed and that isn't stale.
+  const now = Date.now();
   const visible = orders
-    .filter((o) => !o.dismissed && Date.now() - o.placedAt < MAX_AGE_MS)
+    .filter((o) => {
+      if (o.dismissed || now - o.placedAt > MAX_AGE_MS) return false;
+      if (isFinal(o.status)) return !!o.finalizedAt && now - o.finalizedAt < SERVED_LINGER_MS;
+      return true;
+    })
     .sort((a, b) => b.placedAt - a.placedAt);
   const order = visible[0];
   if (!order) return null;
 
   const c = COPY[order.status];
-  const stepIndex = STEPS.indexOf(order.status); // -1 for cancelled
-  const canDismiss = order.status === "served" || order.status === "cancelled";
+  const stepIndex = STEPS.indexOf(order.status);
+  const canEditTable = order.status === "received" || order.status === "preparing";
+  const showPrice = (n: number) => (currency ? formatPrice(n, currency) : `$${n.toFixed(2)}`);
+
+  const openDetail = () => {
+    setTableDraft(order.tableNumber || "");
+    setDetailOpen(true);
+  };
+
+  const saveTable = async () => {
+    if (savingTable) return;
+    setSavingTable(true);
+    const ok = await updateOrderTableNumber(order.id, tableDraft);
+    setSavingTable(false);
+    if (ok) {
+      write(read().map((o) => (o.id === order.id ? { ...o, tableNumber: tableDraft.trim() } : o)));
+      refresh();
+      window.dispatchEvent(
+        new CustomEvent("lfh:toast", { detail: { message: "Table number updated ✓" } })
+      );
+    } else {
+      window.dispatchEvent(
+        new CustomEvent("lfh:toast", { detail: { message: "Couldn't update — the order may already be served." } })
+      );
+    }
+  };
 
   return (
-    <div className={`order-tracker status-${order.status}`} role="status" aria-live="polite">
-      <div className="ot-icon" aria-hidden="true">
-        <i className={`fas ${c.icon}`}></i>
-      </div>
-      <div className="ot-body">
-        <div className="ot-top">
-          <span className="ot-label">{c.label}</span>
-          {order.tableNumber && <span className="ot-table">Table {order.tableNumber}</span>}
+    <>
+      <button
+        type="button"
+        className={`order-tracker status-${order.status}`}
+        onClick={openDetail}
+        aria-label="View order status"
+      >
+        <div className="ot-icon" aria-hidden="true">
+          <i className={`fas ${c.icon}`}></i>
         </div>
-        <div className="ot-sub">{c.sub}</div>
-        {stepIndex >= 0 && (
-          <div className="ot-steps" aria-hidden="true">
-            {STEPS.map((s, i) => (
-              <span key={s} className={`ot-step ${i <= stepIndex ? "done" : ""} ${i === stepIndex ? "active" : ""}`} />
-            ))}
+        <div className="ot-body">
+          <div className="ot-top">
+            <span className="ot-label">{c.label}</span>
+            {order.tableNumber && <span className="ot-table">Table {order.tableNumber}</span>}
           </div>
-        )}
-      </div>
-      {canDismiss && (
-        <button className="ot-close" aria-label="Dismiss" onClick={() => dismiss(order.id)}>
+          <div className="ot-sub">{c.sub}</div>
+          {stepIndex >= 0 && (
+            <div className="ot-steps" aria-hidden="true">
+              {STEPS.map((s, i) => (
+                <span key={s} className={`ot-step ${i <= stepIndex ? "done" : ""} ${i === stepIndex ? "active" : ""}`} />
+              ))}
+            </div>
+          )}
+        </div>
+        <span
+          className="ot-close"
+          role="button"
+          aria-label="Dismiss"
+          onClick={(e) => {
+            e.stopPropagation();
+            dismiss(order.id);
+          }}
+        >
           <i className="fas fa-times"></i>
-        </button>
+        </span>
+      </button>
+
+      {detailOpen && (
+        <>
+          <div className="overlay active" onClick={() => setDetailOpen(false)} />
+          <div className="ot-sheet" role="dialog" aria-modal="true" aria-label="Order status">
+            <button className="ot-sheet-close" aria-label="Close" onClick={() => setDetailOpen(false)}>
+              <i className="fas fa-times"></i>
+            </button>
+
+            <div className={`ot-sheet-head status-${order.status}`}>
+              <div className="ot-icon" aria-hidden="true">
+                <i className={`fas ${c.icon}`}></i>
+              </div>
+              <div>
+                <div className="ot-label">{c.label}</div>
+                <div className="ot-sub">{c.sub}</div>
+              </div>
+            </div>
+
+            {stepIndex >= 0 && (
+              <div className="ot-steps big" aria-hidden="true">
+                {STEPS.map((s, i) => (
+                  <span key={s} className={`ot-step ${i <= stepIndex ? "done" : ""} ${i === stepIndex ? "active" : ""}`} />
+                ))}
+              </div>
+            )}
+
+            {order.items && order.items.length > 0 && (
+              <div className="ot-items">
+                {order.items.map((it, i) => (
+                  <div key={i} className="ot-item-line">
+                    <span>{it.title}</span>
+                    <span>×{it.qty}</span>
+                  </div>
+                ))}
+                <div className="ot-item-line total">
+                  <span>Total</span>
+                  <span>{showPrice(order.total)}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="ot-table-edit">
+              <label htmlFor="ot-table-input">Table number</label>
+              <div className="ot-table-row">
+                <input
+                  id="ot-table-input"
+                  type="text"
+                  inputMode="numeric"
+                  value={tableDraft}
+                  disabled={!canEditTable}
+                  placeholder="e.g. 7"
+                  onChange={(e) => setTableDraft(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="ot-save"
+                  disabled={!canEditTable || savingTable || tableDraft.trim() === (order.tableNumber || "").trim()}
+                  onClick={saveTable}
+                >
+                  {savingTable ? "Saving…" : "Save"}
+                </button>
+              </div>
+              <p className="ot-note">
+                {canEditTable
+                  ? "Got the table wrong? Fix it here — the kitchen sees the change. You can't change the dishes."
+                  : "This order is already served, so the table number is locked."}
+              </p>
+            </div>
+          </div>
+        </>
       )}
-    </div>
+    </>
   );
 }
