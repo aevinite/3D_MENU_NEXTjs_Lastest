@@ -26,10 +26,38 @@ export interface MenuItem {
   longDescription: string;
   rating: string;
   time: string;
-  nutrition: { calories: string; protein: string; carbs: string };
+  nutrition: { calories: string; protein: string; carbs: string; sugar?: string };
   ingredients: { emoji: string; name: string }[];
   reviews: { name: string; rating: number; text: string }[];
   relatedSlugs: string[];
+  tags: string[];
+}
+
+// A label that exists in several languages, e.g. { en: "Burgers", de: "Burger" }.
+export type LocalizedText = Record<string, string>;
+
+export interface Category {
+  slug: string;
+  name: LocalizedText;
+  icon?: string;   // FontAwesome class, e.g. "fa-burger"
+  color?: string;  // hex accent
+  sortOrder: number;
+  active: boolean;
+}
+
+export interface Filter {
+  slug: string;
+  name: LocalizedText;
+  icon?: string;   // emoji or icon
+  sortOrder: number;
+  active: boolean;
+}
+
+// Pick the label for a language, falling back to English, then to whatever
+// exists, so the UI never shows a blank.
+export function localized(text: LocalizedText | undefined, lang: string): string {
+  if (!text) return "";
+  return text[lang] || text.en || Object.values(text)[0] || "";
 }
 
 // One DB row (snake_case) -> one app object (camelCase).
@@ -50,10 +78,11 @@ function mapRow(row: any): MenuItem {
     longDescription: row.long_description ?? "",
     rating: row.rating ?? "0",
     time: row.time ?? "",
-    nutrition: row.nutrition ?? { calories: "", protein: "", carbs: "" },
+    nutrition: row.nutrition ?? { calories: "", protein: "", carbs: "", sugar: "" },
     ingredients: row.ingredients ?? [],
     reviews: row.reviews ?? [],
     relatedSlugs: row.related_slugs ?? [],
+    tags: row.tags ?? [],
   };
 }
 
@@ -76,4 +105,57 @@ export async function getMenuItem(slug: string): Promise<MenuItem | null> {
     .maybeSingle();
   if (error) throw new Error(`Failed to load item "${slug}": ${error.message}`);
   return data ? mapRow(data) : null;
+}
+
+// Active categories, in display order. The virtual "All" tab is added by the UI.
+export async function getCategories(): Promise<Category[]> {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order");
+  if (error) throw new Error(`Failed to load categories: ${error.message}`);
+  return (data ?? []).map((r) => ({
+    slug: r.slug,
+    name: r.name ?? {},
+    icon: r.icon ?? undefined,
+    color: r.color ?? undefined,
+    sortOrder: r.sort_order ?? 0,
+    active: !!r.active,
+  }));
+}
+
+// Site-wide settings (single 'site' row). Defaults to bubbles on if missing.
+export interface Settings {
+  bubblesEnabled: boolean;
+  serviceMode: boolean;
+}
+export async function getSettings(): Promise<Settings> {
+  const { data, error } = await supabase
+    .from("settings")
+    .select("*")
+    .eq("id", "site")
+    .maybeSingle();
+  if (error) throw new Error(`Failed to load settings: ${error.message}`);
+  return {
+    bubblesEnabled: data ? data.bubbles_enabled !== false : true,
+    serviceMode: data ? data.service_mode === true : false,
+  };
+}
+
+// Active filter chips, in display order. The virtual "All" chip is added by the UI.
+export async function getFilters(): Promise<Filter[]> {
+  const { data, error } = await supabase
+    .from("filters")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order");
+  if (error) throw new Error(`Failed to load filters: ${error.message}`);
+  return (data ?? []).map((r) => ({
+    slug: r.slug,
+    name: r.name ?? {},
+    icon: r.icon ?? undefined,
+    sortOrder: r.sort_order ?? 0,
+    active: !!r.active,
+  }));
 }

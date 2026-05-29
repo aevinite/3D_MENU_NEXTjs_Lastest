@@ -36,6 +36,7 @@ export interface Translations {
   cal: string;
   protein: string;
   carbs: string;
+  sugar: string;
   price: string;
   loadingLabel: string;
   itemNotFound: string;
@@ -50,7 +51,7 @@ export interface Translations {
 const translations: Record<LanguageCode, Translations> = {
   en: {
     greeting: "BONSOIR",
-    heroTitle: "Authentic French Cuisine",
+    heroTitle: "All-Day Café & Bakery",
     categories: "CATEGORIES",
     slide: "Slide",
     searchPlaceholder: "Search dishes...",
@@ -83,6 +84,7 @@ const translations: Record<LanguageCode, Translations> = {
     cal: "Cal",
     protein: "Protein",
     carbs: "Carbs",
+    sugar: "Sugar",
     price: "Price",
     loadingLabel: "Plating your dish",
     itemNotFound: "Item not found",
@@ -95,7 +97,7 @@ const translations: Record<LanguageCode, Translations> = {
   },
   de: {
     greeting: "GUTEN ABEND",
-    heroTitle: "Authentische Französische Küche",
+    heroTitle: "Ganztags Café & Bäckerei",
     categories: "KATEGORIEN",
     slide: "Wischen",
     searchPlaceholder: "Gerichte suchen...",
@@ -128,6 +130,7 @@ const translations: Record<LanguageCode, Translations> = {
     cal: "Kal",
     protein: "Protein",
     carbs: "Kohlenhydrate",
+    sugar: "Zucker",
     price: "Preis",
     loadingLabel: "Ihr Gericht wird vorbereitet",
     itemNotFound: "Artikel nicht gefunden",
@@ -140,7 +143,7 @@ const translations: Record<LanguageCode, Translations> = {
   },
   fr: {
     greeting: "BONSOIR",
-    heroTitle: "Cuisine Française Authentique",
+    heroTitle: "Café & Boulangerie Toute la Journée",
     categories: "CATÉGORIES",
     slide: "Glisser",
     searchPlaceholder: "Rechercher des plats...",
@@ -173,6 +176,7 @@ const translations: Record<LanguageCode, Translations> = {
     cal: "Cal",
     protein: "Protéines",
     carbs: "Glucides",
+    sugar: "Sucre",
     price: "Prix",
     loadingLabel: "Préparation de votre plat",
     itemNotFound: "Article introuvable",
@@ -185,7 +189,7 @@ const translations: Record<LanguageCode, Translations> = {
   },
   ar: {
     greeting: "مساء الخير",
-    heroTitle: "مطبخ فرنسي أصيل",
+    heroTitle: "مقهى ومخبز طوال اليوم",
     categories: "الفئات",
     slide: "اسحب",
     searchPlaceholder: "ابحث عن الأطباق...",
@@ -218,6 +222,7 @@ const translations: Record<LanguageCode, Translations> = {
     cal: "سعرة",
     protein: "بروتين",
     carbs: "كربوهيدرات",
+    sugar: "سكر",
     price: "السعر",
     loadingLabel: "يتم تجهيز طبقك",
     itemNotFound: "العنصر غير موجود",
@@ -230,7 +235,7 @@ const translations: Record<LanguageCode, Translations> = {
   },
   hi: {
     greeting: "सुप्रभात",
-    heroTitle: "प्रामाणिक फ्रेंच व्यंजन",
+    heroTitle: "ऑल-डे कैफ़े और बेकरी",
     categories: "श्रेणियां",
     slide: "स्लाइड करें",
     searchPlaceholder: "व्यंजन खोजें...",
@@ -263,6 +268,7 @@ const translations: Record<LanguageCode, Translations> = {
     cal: "कैलोरी",
     protein: "प्रोटीन",
     carbs: "कार्ब्स",
+    sugar: "शुगर",
     price: "कीमत",
     loadingLabel: "आपका व्यंजन तैयार हो रहा है",
     itemNotFound: "आइटम नहीं मिला",
@@ -275,7 +281,7 @@ const translations: Record<LanguageCode, Translations> = {
   },
   ko: {
     greeting: "안녕하세요",
-    heroTitle: "정통 프랑스 요리",
+    heroTitle: "올데이 카페 & 베이커리",
     categories: "카테고리",
     slide: "스와이프",
     searchPlaceholder: "요리 검색...",
@@ -308,6 +314,7 @@ const translations: Record<LanguageCode, Translations> = {
     cal: "칼로리",
     protein: "단백질",
     carbs: "탄수화물",
+    sugar: "당",
     price: "가격",
     loadingLabel: "요리를 준비 중입니다",
     itemNotFound: "항목을 찾을 수 없음",
@@ -320,7 +327,10 @@ const translations: Record<LanguageCode, Translations> = {
   },
 };
 
-export const useTranslation = (): Translations => {
+// The current language code (e.g. "en", "de"). Use this when the text you need
+// is NOT in the static translations table — e.g. database-driven category and
+// filter names, which carry their own per-language strings.
+export const useLanguage = (): LanguageCode => {
   const [lang, setLang] = useState<LanguageCode>("en");
 
   useEffect(() => {
@@ -332,5 +342,10 @@ export const useTranslation = (): Translations => {
     return () => window.removeEventListener("lfh:language-changed", onLang);
   }, []);
 
+  return lang;
+};
+
+export const useTranslation = (): Translations => {
+  const lang = useLanguage();
   return translations[lang] || translations.en;
 };

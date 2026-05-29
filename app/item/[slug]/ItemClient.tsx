@@ -31,6 +31,7 @@ interface FoodItem {
     calories: string;
     protein: string;
     carbs: string;
+    sugar?: string;
   };
   ingredients: {
     emoji: string;
@@ -234,19 +235,27 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
 
   const getRelatedItems = (): FoodItem[] => {
     if (!item || !allItems.length) return [];
+    const TOTAL = 10;
+    const SAME_TARGET = 6; // aim ~60% same category, ~40% other — then shuffle
+    const rating = (it: FoodItem) => parseFloat(it.rating) || 0;
+    const byRating = (a: FoodItem, b: FoodItem) => rating(b) - rating(a);
+
     const others = allItems.filter((it) => it.slug !== item.slug);
-    const currentPrice = parseFloat(item.price) || 0;
-    const scored = others.map((it) => {
-      let score = 0;
-      if (it.category === item.category) score += 100;
-      if (it.veg === item.veg) score += 30;
-      if (it.is4d && item.is4d) score += 10;
-      const priceDelta = Math.abs((parseFloat(it.price) || 0) - currentPrice);
-      score += Math.max(0, 20 - priceDelta);
-      return { item: it, score };
-    });
-    scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, 5).map((s) => s.item);
+    const same = others.filter((it) => it.category === item.category).sort(byRating);
+    const diff = others.filter((it) => it.category !== item.category).sort(byRating);
+
+    const samePick = same.slice(0, SAME_TARGET);
+    const diffPick = diff.slice(0, TOTAL - samePick.length);
+    let picked = [...samePick, ...diffPick];
+    if (picked.length < TOTAL) picked = picked.concat(same.slice(samePick.length));
+    picked = picked.slice(0, TOTAL);
+
+    // Shuffle so same- and other-category dishes are interleaved, not grouped.
+    for (let i = picked.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [picked[i], picked[j]] = [picked[j], picked[i]];
+    }
+    return picked;
   };
 
   const toggleFavorite = () => {
@@ -456,8 +465,8 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
             <div className="stat-label">{t.carbs}</div>
           </div>
           <div className="stat-box">
-            <div className="stat-num">{item.time ? item.time.replace(/^(\d+).*/, '$1m') : '—'}</div>
-            <div className="stat-label">{t.prepTime}</div>
+            <div className="stat-num">{item.nutrition.sugar ?? '—'}</div>
+            <div className="stat-label">{t.sugar}</div>
           </div>
         </div>
 

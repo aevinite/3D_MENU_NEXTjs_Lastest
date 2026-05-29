@@ -28,11 +28,22 @@ memory for tone and preferences.
 - Persistence: `localStorage` keys `lfh_cart`, `lfh-favorites`; session theme
   in `lfh_theme_session` (read-side currently broken — see bug B2).
 - Menu data: `lib/menu.ts` — `getMenuItems()` / `getMenuItem(slug)` read the
-  `menu_items` table from Supabase via the ANON key (`lib/supabase.ts`), mapping
-  snake_case columns to camelCase. `/menu` and `/item/[slug]` use this; the old
+  `menu_items` table; `getCategories()` / `getFilters()` read the `categories` /
+  `filters` tables. All via the ANON key (`lib/supabase.ts`), mapping snake_case
+  columns to camelCase. `/menu` and `/item/[slug]` use these; the old
   `public/content/menu.json` is the seed source only, no longer fetched at runtime.
-  Re-seed with `node scripts/seed-supabase.mjs` (runs the migration + upserts all
-  items via the service role, then verifies an anon read). Secrets all live in
+- Categories & filters are DB-driven, not hardcoded. `categories` (slug, `name`
+  JSONB of 6-lang translations, icon FA-class, color, sort_order, active) and
+  `filters` (slug, `name` JSONB, icon emoji, sort_order, active). Each dish has a
+  `tags TEXT[]` listing the filter slugs it matches (seeded from the `veg` flag,
+  which still exists for the VegIcon). `app/menu/page.tsx` builds the category bar
+  and filter chips from these, prepending a virtual "All". Multilingual labels use
+  `localized(name, lang)` + the `useLanguage()` hook in `lib/i18n.ts` (falls back to
+  `en`, then any value). New categories/filters added later should get their other
+  languages auto-translated at editor-save time, not by hand.
+- Re-seed with `node scripts/seed-supabase.mjs` (runs ALL `supabase/migrations/*.sql`
+  in order via the Management API, upserts categories + filters + items via the
+  service role, then verifies an anon read of all three tables). Secrets all live in
   `.env.local` (gitignored): anon key, service-role key, and `SUPABASE_ACCESS_TOKEN`
   (the Management-API PAT used for DDL).
 

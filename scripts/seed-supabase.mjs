@@ -11,7 +11,7 @@
 //
 // Run with:  node scripts/seed-supabase.mjs
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
@@ -59,16 +59,17 @@ async function runSql(query) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// --- step 1: create the table via the Management API ---
+// --- step 1: run every migration in supabase/migrations (in filename order) ---
 async function runMigration() {
-  const sql = readFileSync(
-    join(root, "supabase", "migrations", "001_menu_items.sql"),
-    "utf8"
-  );
-  await runSql(sql);
-  // PostgREST caches the schema; nudge it so the JS client sees the new table.
+  const dir = join(root, "supabase", "migrations");
+  const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
+  for (const file of files) {
+    await runSql(readFileSync(join(dir, file), "utf8"));
+    console.log(`✓ ran migration ${file}`);
+  }
+  // PostgREST caches the schema; nudge it so the JS client sees new tables/columns.
   await runSql("NOTIFY pgrst, 'reload schema';");
-  console.log("✓ migration ran — menu_items table is ready");
+  console.log("✓ schema is ready (menu_items, categories, filters)");
 }
 
 // --- step 2: map camelCase JSON -> snake_case DB rows, then upsert ---
@@ -93,43 +94,111 @@ function toRow(item, index) {
     ingredients: item.ingredients ?? null,
     reviews: item.reviews ?? null,
     related_slugs: item.relatedSlugs ?? null,
+    // Filter tags. Fall back to deriving from the veg flag so older menu.json
+    // files without a `tags` field still seed sensibly.
+    tags: item.tags ?? (item.veg ? ["veg"] : ["non-veg"]),
     sort_order: index,
   };
+}
+
+// camelCase JSON -> snake_case row for the categories / filters tables.
+function toCategoryRow(c, index) {
+  return {
+    slug: c.slug,
+    name: c.name,
+    icon: c.icon ?? null,
+    color: c.color ?? null,
+    sort_order: c.sortOrder ?? index,
+    active: c.active ?? true,
+  };
+}
+
+function toFilterRow(f, index) {
+  return {
+    slug: f.slug,
+    name: f.name,
+    icon: f.icon ?? null,
+    sort_order: f.sortOrder ?? index,
+    active: f.active ?? true,
+  };
+}
+
+// Generic upsert-with-retry (schema cache can lag a few seconds after DDL).
+async function upsertRows(admin, table, rows, conflict) {
+  let lastErr;
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    const { error } = await admin.from(table).upsert(rows, { onConflict: conflict });
+    if (!error) {
+      console.log(`✓ upserted ${rows.length} rows into ${table}`);
+      return;
+    }
+    lastErr = error;
+    if (!/schema cache/i.test(error.message)) break;
+    console.log(`  …waiting for schema cache on ${table} (attempt ${attempt})`);
+    await sleep(2000);
+  }
+  throw new Error(`Seed of ${table} failed: ${lastErr.message}`);
+}
+
+// Delete every row in a table (used by --replace for a clean rebuild).
+// `.not(key,'is',null)` matches all rows (every row has a non-null key).
+async function clearTable(admin, table, key) {
+  const { error } = await admin.from(table).delete().not(key, "is", null);
+  if (error) throw new Error(`Clear ${table} failed: ${error.message}`);
+  console.log(`✓ cleared ${table}`);
 }
 
 async function seed() {
   const menu = JSON.parse(
     readFileSync(join(root, "public", "content", "menu.json"), "utf8")
   );
-  const rows = menu.items.map(toRow);
 
   const admin = createClient(SUPABASE_URL, SERVICE, { auth: { persistSession: false } });
-  // Schema-cache reload can lag a few seconds, so retry briefly.
-  let lastErr;
-  for (let attempt = 1; attempt <= 6; attempt++) {
-    const { error } = await admin.from("menu_items").upsert(rows, { onConflict: "id" });
-    if (!error) {
-      console.log(`✓ upserted ${rows.length} menu items (service role)`);
-      return;
-    }
-    lastErr = error;
-    if (!/schema cache/i.test(error.message)) break;
-    console.log(`  …waiting for schema cache (attempt ${attempt})`);
-    await sleep(2000);
+
+  // --replace wipes everything first, so the DB mirrors menu.json exactly
+  // (use it when rebuilding the whole menu, e.g. a brand-new restaurant).
+  if (process.argv.includes("--replace")) {
+    console.log("  --replace: clearing existing data…");
+    await clearTable(admin, "menu_items", "id");
+    await clearTable(admin, "categories", "slug");
+    await clearTable(admin, "filters", "slug");
   }
-  throw new Error(`Seed failed: ${lastErr.message}`);
+
+  // Categories and filters first (menu_items.category references a category slug).
+  if (menu.categories?.length) {
+    await upsertRows(admin, "categories", menu.categories.map(toCategoryRow), "slug");
+  }
+  if (menu.filters?.length) {
+    await upsertRows(admin, "filters", menu.filters.map(toFilterRow), "slug");
+  }
+  await upsertRows(admin, "menu_items", menu.items.map(toRow), "id");
 }
 
 // --- step 3: read back via the anon key to prove public RLS read works ---
 async function verifyAnonRead() {
   const pub = createClient(SUPABASE_URL, ANON, { auth: { persistSession: false } });
+
   const { data, error } = await pub
     .from("menu_items")
-    .select("id, slug, title")
+    .select("id, slug, title, tags")
     .order("sort_order");
   if (error) throw new Error(`Anon read failed: ${error.message}`);
   console.log(`✓ anon key can read ${data.length} items:`);
-  for (const r of data) console.log(`    ${r.sort_order ?? ""} ${r.slug} — ${r.title}`);
+  for (const r of data) console.log(`    ${r.slug} — ${r.title} [${(r.tags ?? []).join(", ")}]`);
+
+  const { data: cats, error: catErr } = await pub
+    .from("categories")
+    .select("slug")
+    .order("sort_order");
+  if (catErr) throw new Error(`Anon read of categories failed: ${catErr.message}`);
+  console.log(`✓ anon key can read ${cats.length} categories: ${cats.map((c) => c.slug).join(", ")}`);
+
+  const { data: fils, error: filErr } = await pub
+    .from("filters")
+    .select("slug")
+    .order("sort_order");
+  if (filErr) throw new Error(`Anon read of filters failed: ${filErr.message}`);
+  console.log(`✓ anon key can read ${fils.length} filters: ${fils.map((f) => f.slug).join(", ")}`);
 }
 
 await runMigration();

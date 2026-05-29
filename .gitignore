@@ -36,6 +36,9 @@ yarn-error.log*
 # IDE/AI tools - NEVER commit these!
 .claude/
 
+# Private local menu editor (uses the service-role key — never push it)
+editor/
+
 # vercel
 .vercel
 

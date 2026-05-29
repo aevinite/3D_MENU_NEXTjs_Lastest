@@ -4,63 +4,67 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import FoodCard from "@/components/FoodCard";
 import { modelLoader } from "@/lib/modelLoader";
-import { getMenuItems } from "@/lib/menu";
-import { useTranslation } from "@/lib/i18n";
+import {
+  getMenuItems,
+  getCategories,
+  getFilters,
+  localized,
+  type MenuItem,
+  type Category,
+  type Filter,
+} from "@/lib/menu";
+import { useTranslation, useLanguage } from "@/lib/i18n";
 
-const CAT_META = [
-  { id: "all",     icon: "fa-utensils", color: "#d4a574" },
-  { id: "burgers", icon: "fa-burger",   color: "#f97316" },
-  { id: "pizza",   icon: "fa-pizza-slice", color: "#ef4444" },
-  { id: "sushi",   icon: "fa-fish",     color: "#06b6d4" },
-  { id: "pasta",   icon: "fa-bowl-food", color: "#f59e0b" },
-  { id: "salads",  icon: "fa-leaf",     color: "#22c55e" },
-];
-
-interface FoodItem {
-  id: string;
-  slug: string;
-  title: string;
-  price: string;
-  image: string;
-  category: string;
-  veg: boolean;
-  is4d: boolean;
-  modelFolder?: string;
-  modelSmallUrl?: string;
-  modelOptimizedUrl?: string;
-  description?: string;
-  rating?: string;
-  time?: string;
-  nutrition?: {
-    calories?: string;
-    protein?: string;
-    carbs?: string;
-  };
-}
+// The card list works with the full MenuItem shape from the data layer.
+type FoodItem = MenuItem;
 
 export default function MenuPage() {
   const t = useTranslation();
+  const lang = useLanguage();
   const [menuData, setMenuData] = useState<FoodItem[]>([]);
-  const [currentCategory, setCurrentCategory] = useState("all");
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [dbFilters, setDbFilters] = useState<Filter[]>([]);
+  const [currentCategory, setCurrentCategory] = useState("");
   const [currentFilter, setCurrentFilter] = useState("all");
   const [layout, setLayout] = useState("list");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const catNameMap: Record<string, string> = {
-    all: t.catAll,
-    burgers: t.catBurgers,
-    pizza: t.catPizza,
-    sushi: t.catSushi,
-    pasta: t.catPasta,
-    salads: t.catSalads,
-  };
+  // Category bar — straight from the DB. One category is ALWAYS selected
+  // (no "All" option); clicking a category just switches to it.
+  const categories = dbCategories.map((c) => ({
+    slug: c.slug,
+    name: localized(c.name, lang),
+    icon: c.icon || "fa-utensils",
+    color: c.color || "#d4a574",
+  }));
 
-  const categories = CAT_META.map((c) => ({ ...c, name: catNameMap[c.id] || c.id }));
+  // Filter chips — same idea, no "All" chip. Click the active one to clear it.
+  const filterChips = dbFilters.map((f) => ({
+    slug: f.slug,
+    label: `${f.icon ? f.icon + " " : ""}${localized(f.name, lang)}`,
+  }));
+
+  // A category is ALWAYS selected — clicking just switches, never clears.
+  const selectCategory = (slug: string) => setCurrentCategory(slug);
+  // Filters DO toggle: "all" is the sentinel for "no filter"; clicking the
+  // active filter clears back to all.
+  const toggleFilter = (slug: string) =>
+    setCurrentFilter((cur) => (cur === slug ? "all" : slug));
 
   useEffect(() => {
     getMenuItems()
       .then((items) => setMenuData(items))
       .catch((err) => console.error("Error loading menu data:", err));
+    getCategories()
+      .then((cats) => {
+        setDbCategories(cats);
+        // Default to the first category so one is always selected.
+        setCurrentCategory((cur) => cur || cats[0]?.slug || "");
+      })
+      .catch((err) => console.error("Error loading categories:", err));
+    getFilters()
+      .then(setDbFilters)
+      .catch((err) => console.error("Error loading filters:", err));
   }, []);
 
   useEffect(() => {
@@ -70,14 +74,12 @@ export default function MenuPage() {
       (i) => i.is4d && i.modelSmallUrl && i.modelOptimizedUrl
     );
 
-    const inCat =
-      currentCategory === "all"
-        ? fourD
-        : fourD.filter((i) => i.category === currentCategory);
-    const outCat =
-      currentCategory === "all"
-        ? []
-        : fourD.filter((i) => i.category !== currentCategory);
+    const inCat = !currentCategory
+      ? fourD
+      : fourD.filter((i) => i.category === currentCategory);
+    const outCat = !currentCategory
+      ? []
+      : fourD.filter((i) => i.category !== currentCategory);
 
     const smallIfNeeded = (i: FoodItem) =>
       modelLoader.isLoaded(i.modelOptimizedUrl) ? null : i.modelSmallUrl!;
@@ -91,13 +93,10 @@ export default function MenuPage() {
   }, [menuData, currentCategory]);
 
   const filteredItems = menuData.filter((item) => {
-    if (currentCategory !== "all" && item.category !== currentCategory) {
+    if (currentCategory && item.category !== currentCategory) {
       return false;
     }
-    if (currentFilter === "veg" && !item.veg) {
-      return false;
-    }
-    if (currentFilter === "non-veg" && item.veg) {
+    if (currentFilter !== "all" && !item.tags.includes(currentFilter)) {
       return false;
     }
     if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -123,12 +122,13 @@ export default function MenuPage() {
         <div className="cat-scroller" id="cat-scroller" role="tablist" aria-label="Menu categories">
           {categories.map((cat) => (
             <button
-              key={cat.id}
+              key={cat.slug}
               type="button"
               role="tab"
-              aria-selected={cat.id === currentCategory}
-              className={`cat-card ${cat.id === currentCategory ? "active" : ""}`}
-              onClick={() => setCurrentCategory(cat.id)}
+              aria-selected={cat.slug === currentCategory}
+              className={`cat-card ${cat.slug === currentCategory ? "active" : ""}`}
+              style={{ ["--cat-color" as string]: cat.color }}
+              onClick={() => selectCategory(cat.slug)}
             >
               <div className="cat-icon" aria-hidden="true">
                 <i className={`fas ${cat.icon}`}></i>
@@ -140,7 +140,12 @@ export default function MenuPage() {
 
         <div className="items-header" id="sticky-header">
           <div className="search-container">
-            <i className="fas fa-search search-icon" aria-hidden="true"></i>
+            <img
+              className="search-logo"
+              src="https://littlefrenchhouse.in/restaurant/wp-content/uploads/2021/01/LFH-Logo_200x200-e1612862168838.png"
+              alt=""
+              aria-hidden="true"
+            />
             <input
               type="search"
               id="search-input"
@@ -154,30 +159,17 @@ export default function MenuPage() {
           <div className="header-controls">
             <div className="controls-group">
               <div className="filter-row" role="group" aria-label="Dietary filter">
-                <button
-                  type="button"
-                  className={`filter-chip ${currentFilter === "all" ? "active" : ""}`}
-                  aria-pressed={currentFilter === "all"}
-                  onClick={() => setCurrentFilter("all")}
-                >
-                  {t.filterAll}
-                </button>
-                <button
-                  type="button"
-                  className={`filter-chip ${currentFilter === "veg" ? "active" : ""}`}
-                  aria-pressed={currentFilter === "veg"}
-                  onClick={() => setCurrentFilter("veg")}
-                >
-                  {t.filterVeg}
-                </button>
-                <button
-                  type="button"
-                  className={`filter-chip ${currentFilter === "non-veg" ? "active" : ""}`}
-                  aria-pressed={currentFilter === "non-veg"}
-                  onClick={() => setCurrentFilter("non-veg")}
-                >
-                  {t.filterNonVeg}
-                </button>
+                {filterChips.map((chip) => (
+                  <button
+                    key={chip.slug}
+                    type="button"
+                    className={`filter-chip ${currentFilter === chip.slug ? "active" : ""}`}
+                    aria-pressed={currentFilter === chip.slug}
+                    onClick={() => toggleFilter(chip.slug)}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
               </div>
               <div className="layout-switch" role="group" aria-label="Layout">
                 <button
