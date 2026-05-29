@@ -53,7 +53,20 @@ export default function OrderTracker() {
   const [currency, setCurrency] = useState<CurrencyMeta | null>(null);
   const lastStatus = useRef<Record<string, OrderStatus>>({});
 
-  const refresh = () => setOrders(read());
+  const refresh = () => {
+    // Backfill a finalize time for any already-final order missing one (e.g. it was
+    // cancelled in a past session) so it auto-clears instead of getting stuck.
+    const list = read();
+    let changed = false;
+    list.forEach((o) => {
+      if (isFinal(o.status) && !o.finalizedAt) {
+        o.finalizedAt = Date.now();
+        changed = true;
+      }
+    });
+    if (changed) write(list);
+    setOrders(list);
+  };
 
   useEffect(() => {
     refresh();

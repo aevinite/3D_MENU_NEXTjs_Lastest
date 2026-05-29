@@ -186,6 +186,22 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   outline: none; transition: all 0.3s;
 }
 .table-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow); }
+.table-input-error { border-color: #ef4444 !important; box-shadow: 0 0 0 4px rgba(239,68,68,0.25) !important; animation: tableShake 0.4s; }
+/* cart: Bill / Previous-orders tabs + history list */
+.cart-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.cart-tabs button {
+  flex: 1; padding: 9px 12px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 13px;
+  background: transparent; border: 1px solid var(--border-color, rgba(212,165,116,0.3)); color: var(--muted);
+}
+.cart-tabs button.active { background: var(--accent); border-color: var(--accent); color: #2a1d0c; }
+.order-history { display: flex; flex-direction: column; gap: 12px; }
+.hist-order { border: 1px solid var(--border-color, rgba(212,165,116,0.2)); border-radius: 14px; padding: 14px; }
+.hist-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.hist-table { font-weight: 700; color: var(--text); }
+.hist-when { font-size: 11px; color: var(--muted); }
+.hist-items { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+.hist-total { display: flex; justify-content: space-between; font-weight: 700; color: var(--text); border-top: 1px solid var(--border-color, rgba(212,165,116,0.15)); padding-top: 8px; }
+@keyframes tableShake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
 
 /* --- TOAST --- */
 #toast { 
@@ -2546,11 +2562,14 @@ a:focus:not(:focus-visible) { outline: none; }
   font: inherit; text-align: left; cursor: pointer;
 }
 .order-tracker:hover { border-color: color-mix(in srgb, var(--ot-accent) 55%, transparent); }
-.order-tracker.status-preparing { --ot-accent: #e8a13c; }
+.order-tracker.status-preparing { --ot-accent: #4f9dff; } /* blue, distinct from gold "received" */
 .order-tracker.status-served { --ot-accent: #4ade80; }
 .order-tracker.status-cancelled { --ot-accent: #ef4444; }
 .order-tracker { border-color: color-mix(in srgb, var(--ot-accent) 38%, transparent); }
 @keyframes otRise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+/* For horizontally-centred elements — keeps translateX(-50%) so the rise
+   animation doesn't clobber the centering (which shoved the sheet off to the side). */
+@keyframes otRiseCentered { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
 .ot-icon {
   flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
@@ -2575,11 +2594,12 @@ a:focus:not(:focus-visible) { outline: none; }
 .ot-step.active { animation: otStep 1.4s ease-in-out infinite; }
 @keyframes otStep { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
 .ot-close {
-  flex: 0 0 auto; background: transparent; border: none; color: var(--muted);
-  cursor: pointer; font-size: 15px; padding: 6px; line-height: 1; align-self: flex-start;
-  display: inline-flex;
+  flex: 0 0 auto; background: rgba(245,236,221,0.12); border: none; color: #f5ecdd;
+  cursor: pointer; font-size: 14px; padding: 0; line-height: 1; align-self: flex-start;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
 }
-.ot-close:hover { color: var(--text); }
+.ot-close:hover { background: rgba(245,236,221,0.22); color: #fff; }
 
 /* sticky mini-cart — a compact centred pill on desktop, a full-width bar on phones */
 .mini-cart {
@@ -2590,14 +2610,15 @@ a:focus:not(:focus-visible) { outline: none; }
   background: linear-gradient(135deg, var(--accent) 0%, #c79760 100%); color: #2a1d0c;
   border: none; cursor: pointer; font-weight: 700; font-size: 14px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.42);
-  animation: otRise 0.4s cubic-bezier(0.22,1,0.36,1) both;
+  animation: otRiseCentered 0.4s cubic-bezier(0.22,1,0.36,1) both;
 }
 .mini-cart-left { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 .mini-cart-price { font-variant-numeric: tabular-nums; }
 .mini-cart-cta { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.14); padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
 /* phones: full-width bar, clearing the chef-call FAB on the right */
 @media (max-width: 700px) {
-  .mini-cart { left: 12px; right: 84px; transform: none; border-radius: 16px; padding: 12px 16px; }
+  /* full-width bar (not centred), so use the plain translateY rise */
+  .mini-cart { left: 12px; right: 84px; transform: none; border-radius: 16px; padding: 12px 16px; animation-name: otRise; }
   .mini-cart-price { margin-left: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .mini-cart { animation: none; } }
@@ -2610,7 +2631,7 @@ a:focus:not(:focus-visible) { outline: none; }
   padding: 22px 20px 20px; border-radius: 22px;
   background: rgba(24,20,16,0.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(212,165,116,0.3); box-shadow: 0 24px 60px rgba(0,0,0,0.55);
-  color: var(--text); animation: otRise 0.35s cubic-bezier(0.22,1,0.36,1) both;
+  color: var(--text); animation: otRiseCentered 0.35s cubic-bezier(0.22,1,0.36,1) both;
   --ot-accent: #d4a574;
 }
 .ot-sheet-close {
@@ -2619,7 +2640,7 @@ a:focus:not(:focus-visible) { outline: none; }
   color: var(--text); cursor: pointer; font-size: 15px;
 }
 .ot-sheet-head { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; padding-right: 36px; }
-.ot-sheet-head.status-preparing { --ot-accent: #e8a13c; }
+.ot-sheet-head.status-preparing { --ot-accent: #4f9dff; }
 .ot-sheet-head.status-served { --ot-accent: #4ade80; }
 .ot-sheet-head.status-cancelled { --ot-accent: #ef4444; }
 .ot-sheet-head .ot-label { font-size: 16px; font-weight: 700; }

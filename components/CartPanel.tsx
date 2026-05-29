@@ -13,6 +13,14 @@ interface CartItem {
   qty: number;
 }
 
+interface HistoryOrder {
+  id: string;
+  tableNumber: string;
+  total: number;
+  items: { title: string; qty: number; price: string }[];
+  placedAt: number;
+}
+
 const TAX_RATE = 0.05; // 5% — shown as a line on the bill
 
 const normalize = (raw: unknown): CartItem[] => {
@@ -37,6 +45,8 @@ export default function CartPanel() {
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const [allergenMap, setAllergenMap] = useState<Record<string, string[]>>({});
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [history, setHistory] = useState<HistoryOrder[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [declared, setDeclared] = useState<string[]>([]); // allergens the diner avoids
   const [otherAllergy, setOtherAllergy] = useState(""); // free-text allergy not in the list
   const [otherOpen, setOtherOpen] = useState(false); // reveal the free-text field
@@ -90,7 +100,15 @@ export default function CartPanel() {
       })
       .catch(() => {});
 
-    const handleOpen = () => { setOpen(true); loadCart(); };
+    const loadHistory = () => {
+      try {
+        const r = localStorage.getItem("lfh_order_history");
+        const p = r ? JSON.parse(r) : [];
+        setHistory(Array.isArray(p) ? p : []);
+      } catch { setHistory([]); }
+    };
+    loadHistory();
+    const handleOpen = () => { setOpen(true); loadCart(); loadHistory(); setShowHistory(false); };
     const handleClose = () => setOpen(false);
     const handleCartUpdated = loadCart;
     const handleCurrency = () => setCurrencyState(getCurrency());
@@ -138,6 +156,17 @@ export default function CartPanel() {
 
   const placeOrder = async () => {
     if (cart.length === 0 || placing) return;
+    // Table number is required — the kitchen needs to know where to serve.
+    if (!tableNumber.trim()) {
+      window.dispatchEvent(
+        new CustomEvent("lfh:toast", { detail: { message: "Please enter your table number first." } })
+      );
+      const input = document.getElementById("cart-table") as HTMLInputElement | null;
+      input?.focus();
+      input?.classList.add("table-input-error");
+      setTimeout(() => input?.classList.remove("table-input-error"), 1500);
+      return;
+    }
     setPlacing(true);
     try {
       const allergies = [...declared, ...(otherAllergy.trim() ? [otherAllergy.trim()] : [])];
@@ -165,6 +194,20 @@ export default function CartPanel() {
         });
         localStorage.setItem("lfh_active_orders", JSON.stringify(active));
         window.dispatchEvent(new Event("lfh:order-placed"));
+      } catch {}
+      // Also keep a permanent history this device can browse later.
+      try {
+        const rawH = localStorage.getItem("lfh_order_history");
+        const hist = (() => { const p = rawH ? JSON.parse(rawH) : []; return Array.isArray(p) ? p : []; })();
+        hist.unshift({
+          id: orderId,
+          tableNumber: tableNumber.trim(),
+          total,
+          items: cart.map((it) => ({ title: it.title, qty: it.qty, price: it.price })),
+          placedAt: Date.now(),
+        });
+        localStorage.setItem("lfh_order_history", JSON.stringify(hist.slice(0, 25)));
+        setHistory(hist.slice(0, 25));
       } catch {}
       const msg = tableNumber.trim() ? `Order placed for table ${tableNumber.trim()}! 🎉` : "Order placed! 🎉";
       window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: msg } }));
@@ -211,6 +254,32 @@ export default function CartPanel() {
           )}
         </h3>
 
+        {history.length > 0 && (
+          <div className="cart-tabs">
+            <button type="button" className={!showHistory ? "active" : ""} onClick={() => setShowHistory(false)}>Current bill</button>
+            <button type="button" className={showHistory ? "active" : ""} onClick={() => setShowHistory(true)}>Previous orders ({history.length})</button>
+          </div>
+        )}
+
+        {showHistory ? (
+          <div className="order-history">
+            {history.map((h) => (
+              <div key={h.id} className="hist-order">
+                <div className="hist-top">
+                  <span className="hist-table">{h.tableNumber ? `Table ${h.tableNumber}` : "Order"}</span>
+                  <span className="hist-when">{new Date(h.placedAt).toLocaleString()}</span>
+                </div>
+                <div className="hist-items">
+                  {h.items.map((it, i) => (
+                    <span key={i}>{it.title} ×{it.qty}{i < h.items.length - 1 ? ", " : ""}</span>
+                  ))}
+                </div>
+                <div className="hist-total"><span>Total</span><span>{showPrice(h.total)}</span></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+        <>
         <div id="cart-list" className="cart-list">
           {cart.length === 0 ? (
             <div style={{ textAlign: "center", color: "var(--muted)", padding: "50px 0", fontSize: "15px" }}>
@@ -322,7 +391,7 @@ export default function CartPanel() {
 
             <input
               type="text" inputMode="numeric" pattern="[0-9]*"
-              id="cart-table" className="table-input" placeholder="Enter Table Number"
+              id="cart-table" className="table-input" placeholder="Enter Table Number (required)"
               aria-label="Table number" value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
             />
@@ -337,6 +406,8 @@ export default function CartPanel() {
               <i className="fas fa-circle-check"></i> {placing ? "Placing…" : "Place Order"}
             </button>
           </>
+        )}
+        </>
         )}
       </div>
     </>

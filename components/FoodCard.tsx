@@ -135,7 +135,10 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
             <i className="fas fa-plus"></i>
           </button>
         ) : (
-          <div className="cart-qty-row">
+          <div
+            className="cart-qty-row"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
             <button type="button" className="qty-ctrl" onClick={(e) => updateQty(e, -1)} aria-label="Remove one">
               <i className="fas fa-minus"></i>
             </button>
