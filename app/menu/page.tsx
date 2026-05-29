@@ -52,6 +52,9 @@ export default function MenuPage() {
   const [currentDiet, setCurrentDiet] = useState(""); // "" | "veg" | "non-veg"
   const [layout, setLayout] = useState("list");
   const [searchQuery, setSearchQuery] = useState("");
+  // Only show skeletons if loading is actually slow — avoids a flash on fast /
+  // cached loads where the data is ready almost immediately.
+  const [showSkeleton, setShowSkeleton] = useState(false);
 
   // Category bar — DB categories plus a curated "Chef's Special" tab (backed by
   // the chef-special tag, not a real category). One category is ALWAYS selected.
@@ -97,6 +100,12 @@ export default function MenuPage() {
         setCurrentCategory((cur) => cur || (valid ? saved : cats[0]?.slug || ""));
       })
       .catch((err) => console.error("Error loading categories:", err));
+  }, []);
+
+  // If the data hasn't arrived within a moment, reveal the skeleton.
+  useEffect(() => {
+    const t = setTimeout(() => setShowSkeleton(true), 200);
+    return () => clearTimeout(t);
   }, []);
 
   // Remember the active category so navigating away and Back returns you here.
@@ -207,22 +216,33 @@ export default function MenuPage() {
           </span>
         </div>
         <div className="cat-scroller" id="cat-scroller" role="tablist" aria-label="Menu categories">
-          {categories.map((cat) => (
-            <button
-              key={cat.slug}
-              type="button"
-              role="tab"
-              aria-selected={cat.slug === currentCategory}
-              className={`cat-card ${cat.slug === currentCategory ? "active" : ""}`}
-              style={{ ["--cat-color" as string]: cat.color }}
-              onClick={() => selectCategory(cat.slug)}
-            >
-              <div className="cat-icon" aria-hidden="true">
-                <i className={`fas ${cat.icon}`}></i>
-              </div>
-              <div className="cat-name">{cat.name}</div>
-            </button>
-          ))}
+          {dbCategories.length === 0
+            ? // Still loading: show empty placeholder boxes (only once it's clearly
+              // slow — not the lone Chef's Special star, and not a flash when cached).
+              (showSkeleton
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <div key={`skc-${i}`} className="cat-card cat-skeleton" aria-hidden="true">
+                      <div className="cat-icon sk-cat-icon"></div>
+                      <div className="cat-name sk-cat-name"></div>
+                    </div>
+                  ))
+                : null)
+            : categories.map((cat) => (
+                <button
+                  key={cat.slug}
+                  type="button"
+                  role="tab"
+                  aria-selected={cat.slug === currentCategory}
+                  className={`cat-card ${cat.slug === currentCategory ? "active" : ""}`}
+                  style={{ ["--cat-color" as string]: cat.color }}
+                  onClick={() => selectCategory(cat.slug)}
+                >
+                  <div className="cat-icon" aria-hidden="true">
+                    <i className={`fas ${cat.icon}`}></i>
+                  </div>
+                  <div className="cat-name">{cat.name}</div>
+                </button>
+              ))}
         </div>
 
         <div className="items-header" id="sticky-header">
@@ -317,16 +337,18 @@ export default function MenuPage() {
           className={`items-container ${layout === "gallery" ? "gallery-mode" : ""}`}
         >
           {menuData.length === 0
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={`sk-${i}`} className="item-card skeleton-card" aria-hidden="true">
-                  <div className="sk-thumb"></div>
-                  <div className="sk-lines">
-                    <div className="sk-line w70"></div>
-                    <div className="sk-line w40"></div>
-                    <div className="sk-line w50"></div>
-                  </div>
-                </div>
-              ))
+            ? (showSkeleton
+                ? Array.from({ length: 6 }).map((_, i) => (
+                    <div key={`sk-${i}`} className="item-card skeleton-card" aria-hidden="true">
+                      <div className="sk-thumb"></div>
+                      <div className="sk-lines">
+                        <div className="sk-line w70"></div>
+                        <div className="sk-line w40"></div>
+                        <div className="sk-line w50"></div>
+                      </div>
+                    </div>
+                  ))
+                : null)
             : filteredItems.map((item, index) => (
                 <FoodCard key={item.id} item={item} index={index} viewingCategory={currentCategory} />
               ))}

@@ -190,19 +190,26 @@ export default function CartPanel() {
     <>
       <div className="overlay active" onClick={() => window.dispatchEvent(new Event("lfh:close-all"))}></div>
       <div id="cart-panel" className="cart-panel panel open">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h3 className="panel-title" style={{ margin: 0 }}>
-            <i className="fas fa-receipt"></i> Your Bill
-            {cart.length > 0 && (
-              <span style={{ color: "var(--muted)", fontSize: "13px", fontWeight: 500 }}>
-                {" "}· {itemCount} item{itemCount !== 1 ? "s" : ""}
-              </span>
-            )}
-          </h3>
+        <div className="cart-topbar">
+          <button
+            type="button"
+            className="cart-back"
+            onClick={() => window.dispatchEvent(new Event("lfh:close-all"))}
+          >
+            <i className="fas fa-arrow-left"></i> Back
+          </button>
           <button className="nav-btn" title="Close" aria-label="Close cart" onClick={() => window.dispatchEvent(new Event("lfh:close-all"))}>
             <i className="fas fa-times"></i>
           </button>
         </div>
+        <h3 className="panel-title" style={{ margin: "0 0 20px", textAlign: "left" }}>
+          <i className="fas fa-receipt"></i> Your Bill
+          {cart.length > 0 && (
+            <span style={{ color: "var(--muted)", fontSize: "13px", fontWeight: 500 }}>
+              {" "}· {itemCount} item{itemCount !== 1 ? "s" : ""}
+            </span>
+          )}
+        </h3>
 
         <div id="cart-list" className="cart-list">
           {cart.length === 0 ? (
