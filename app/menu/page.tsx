@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import FoodCard from "@/components/FoodCard";
 import HeroTitle from "@/components/HeroTitle";
@@ -65,7 +66,12 @@ export default function MenuPage() {
   ];
 
   // A category is ALWAYS selected — clicking just switches, never clears.
-  const selectCategory = (slug: string) => setCurrentCategory(slug);
+  // Picking a category also clears any active search: search is a global "all
+  // view", so clicking a category drops you straight into that category.
+  const selectCategory = (slug: string) => {
+    setCurrentCategory(slug);
+    setSearchQuery("");
+  };
   // Sort DOES toggle: clicking the active sort returns to the recommended order.
   const toggleSort = (slug: string) =>
     setCurrentSort((cur) => (cur === slug ? "" : slug));
@@ -80,11 +86,26 @@ export default function MenuPage() {
     getCategories()
       .then((cats) => {
         setDbCategories(cats);
-        // Default to the first category so one is always selected.
-        setCurrentCategory((cur) => cur || cats[0]?.slug || "");
+        // Restore the last-viewed category (e.g. after pressing Back from a dish
+        // page), otherwise default to the first one. One is always selected.
+        let saved = "";
+        try {
+          saved = sessionStorage.getItem("lfh_menu_cat") || "";
+        } catch {}
+        const valid =
+          saved === "chef-special" || cats.some((c) => c.slug === saved);
+        setCurrentCategory((cur) => cur || (valid ? saved : cats[0]?.slug || ""));
       })
       .catch((err) => console.error("Error loading categories:", err));
   }, []);
+
+  // Remember the active category so navigating away and Back returns you here.
+  useEffect(() => {
+    if (!currentCategory) return;
+    try {
+      sessionStorage.setItem("lfh_menu_cat", currentCategory);
+    } catch {}
+  }, [currentCategory]);
 
   useEffect(() => {
     if (!menuData.length) return;
@@ -103,27 +124,55 @@ export default function MenuPage() {
     const smallIfNeeded = (i: FoodItem) =>
       modelLoader.isLoaded(i.modelOptimizedUrl) ? null : i.modelSmallUrl!;
 
+    // On the menu, preload only the SMALL (fast ~2MB) models. The heavy optimized
+    // model is preloaded on the dish detail page instead (see ItemClient), so the
+    // 3D view still opens instantly without the menu downloading ~9MB in the bg.
     modelLoader.setQueue(
       inCat.map(smallIfNeeded).filter((u): u is string => !!u),
       outCat.map(smallIfNeeded).filter((u): u is string => !!u),
-      inCat.map((i) => i.modelOptimizedUrl!),
-      outCat.map((i) => i.modelOptimizedUrl!)
+      [],
+      []
     );
   }, [menuData, currentCategory]);
 
+  // Search matches the dish name OR its category (slug + translated name), so
+  // typing "croissant" finds the croissant-category dishes even though their
+  // display names don't contain the word.
+  const q = searchQuery.trim().toLowerCase();
+  const catNameOf = (slug: string) =>
+    localized(dbCategories.find((c) => c.slug === slug)?.name, lang).toLowerCase();
+  const matchesSearch = (i: FoodItem) =>
+    i.title.toLowerCase().includes(q) ||
+    i.category.toLowerCase().includes(q) ||
+    catNameOf(i.category).includes(q);
+
   const visibleItems = menuData.filter((item) => {
-    if (currentCategory === "chef-special") {
+    // While searching, the list becomes a global "all view" (every category),
+    // ignoring the selected category. Clear the search to fall back to it.
+    if (q) {
+      if (!matchesSearch(item)) return false;
+    } else if (currentCategory === "chef-special") {
       if (!item.tags.includes("chef-special")) return false;
     } else if (currentCategory && item.category !== currentCategory) {
       return false;
     }
     if (currentDiet === "veg" && !item.veg) return false;
     if (currentDiet === "non-veg" && item.veg) return false;
-    if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
     return true;
   });
+
+  // The search dropdown — top matches across all categories. Name-starts-with
+  // first, then by rating.
+  const searchResults = q
+    ? menuData
+        .filter(matchesSearch)
+        .sort((a, b) => {
+          const aStarts = a.title.toLowerCase().startsWith(q) ? 0 : 1;
+          const bStarts = b.title.toLowerCase().startsWith(q) ? 0 : 1;
+          return aStarts - bStarts || ratingOf(b) - ratingOf(a);
+        })
+        .slice(0, 8)
+    : [];
 
   // Apply the chosen sort (a stable copy so the menu order stays the default).
   const filteredItems = [...visibleItems].sort((a, b) => {
@@ -193,6 +242,24 @@ export default function MenuPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            {searchResults.length > 0 && (
+              <div className="search-dropdown" role="listbox">
+                {searchResults.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/item/${r.slug}`}
+                    className="search-result"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <img className="search-result-img" src={r.image} alt="" loading="lazy" decoding="async" />
+                    <span className="search-result-name">{r.title}</span>
+                    <span className="search-result-cat">
+                      {localized(dbCategories.find((c) => c.slug === r.category)?.name, lang) || r.category}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
           <div className="header-controls">
             <div className="controls-group">

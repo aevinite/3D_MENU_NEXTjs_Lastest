@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
@@ -42,6 +42,15 @@ const writeCart = (cart: CartItem[]) => {
 export default function FoodCard({ item, index, viewingCategory }: { item: FoodItem; index: number; viewingCategory?: string }) {
   const [cartQty, setCartQty] = useState(0);
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+
+  // Pop the image on every add (works on touch too, where there's no hover).
+  const popThumb = () => {
+    thumbRef.current?.animate(
+      [{ transform: "scale(0.82)" }, { transform: "scale(1.07)" }, { transform: "scale(1)" }],
+      { duration: 340, easing: "cubic-bezier(0.34,1.56,0.64,1)" }
+    );
+  };
 
   const syncQty = () => {
     const found = readCart().find(i => i.id === item.id);
@@ -64,6 +73,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
   const updateQty = (e: MouseEvent, delta: number) => {
     e.preventDefault();
     e.stopPropagation();
+    if (delta > 0) popThumb();
     const cart = readCart();
     const idx = cart.findIndex(i => i.id === item.id);
     const newQty = (idx >= 0 ? cart[idx].qty : 0) + delta;
@@ -84,7 +94,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
         className={`item-card fade-in ${item.is4d ? "is-4d" : ""}`}
         style={{ animationDelay: `${index * 0.06}s` }}
       >
-        <div className="thumb-wrapper">
+        <div className="thumb-wrapper" ref={thumbRef}>
           <Image
             className="dish-thumb"
             src={item.image}

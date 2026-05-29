@@ -38,6 +38,7 @@ export default function CartPanel() {
   const [allergenMap, setAllergenMap] = useState<Record<string, string[]>>({});
   const [declared, setDeclared] = useState<string[]>([]); // allergens the diner avoids
   const [otherAllergy, setOtherAllergy] = useState(""); // free-text allergy not in the list
+  const [otherOpen, setOtherOpen] = useState(false); // reveal the free-text field
   const [placing, setPlacing] = useState(false);
 
   const loadCart = () => {
@@ -105,6 +106,7 @@ export default function CartPanel() {
 
   const showPrice = (n: number) => (currency ? formatPrice(n, currency) : `$${n.toFixed(2)}`);
   const subtotal = cart.reduce((sum, it) => sum + parseFloat(it.price) * it.qty, 0);
+  const itemCount = cart.reduce((sum, it) => sum + it.qty, 0);
   const tax = subtotal * TAX_RATE;
   const total = subtotal + tax;
 
@@ -129,7 +131,7 @@ export default function CartPanel() {
       });
       const msg = tableNumber.trim() ? `Order placed for table ${tableNumber.trim()}! 🎉` : "Order placed! 🎉";
       window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: msg } }));
-      setCart([]); saveCart([]); setTableNumber(""); setDeclared([]); setOtherAllergy("");
+      setCart([]); saveCart([]); setTableNumber(""); setDeclared([]); setOtherAllergy(""); setOtherOpen(false);
       window.dispatchEvent(new Event("lfh:cart-updated"));
       window.dispatchEvent(new Event("lfh:close-all"));
     } catch {
@@ -154,6 +156,11 @@ export default function CartPanel() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h3 className="panel-title" style={{ margin: 0 }}>
             <i className="fas fa-receipt"></i> Your Bill
+            {cart.length > 0 && (
+              <span style={{ color: "var(--muted)", fontSize: "13px", fontWeight: 500 }}>
+                {" "}· {itemCount} item{itemCount !== 1 ? "s" : ""}
+              </span>
+            )}
           </h3>
           <button className="nav-btn" title="Close" aria-label="Close cart" onClick={() => window.dispatchEvent(new Event("lfh:close-all"))}>
             <i className="fas fa-times"></i>
@@ -172,6 +179,19 @@ export default function CartPanel() {
                 <div key={item.id} className="cart-item">
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="cart-item-name">{item.title}</div>
+                    {itemAllergens(item.id).length > 0 && (
+                      <div className="cart-item-allergens">
+                        {itemAllergens(item.id).map((a) => (
+                          <span
+                            key={a}
+                            className={`allergen-dot ${declared.includes(a) ? "flag" : ""}`}
+                            title={`Contains ${allergenLabel(a).toLowerCase()}`}
+                          >
+                            {allergenIcon(a)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {c.length > 0 && (
                       <div className="cart-item-warn">
                         <i className="fas fa-triangle-exclamation"></i> contains {c.map(allergenLabel).join(", ").toLowerCase()}
@@ -211,16 +231,27 @@ export default function CartPanel() {
                     {a.icon} {a.label}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className={`allergy-toggle ${otherOpen ? "on" : ""}`}
+                  aria-pressed={otherOpen}
+                  onClick={() => setOtherOpen((o) => !o)}
+                >
+                  ✏️ Other
+                </button>
               </div>
-              <input
-                type="text"
-                className="table-input"
-                style={{ marginTop: "10px", marginBottom: 0 }}
-                placeholder="Other? Type any allergy not listed"
-                aria-label="Other allergy"
-                value={otherAllergy}
-                onChange={(e) => setOtherAllergy(e.target.value)}
-              />
+              {otherOpen && (
+                <input
+                  type="text"
+                  className="table-input"
+                  style={{ marginTop: "10px", marginBottom: 0 }}
+                  placeholder="Type your allergy…"
+                  aria-label="Other allergy"
+                  value={otherAllergy}
+                  onChange={(e) => setOtherAllergy(e.target.value)}
+                  autoFocus
+                />
+              )}
               {orderDeclaredHits.length > 0 && (
                 <div className="allergy-warning">
                   <i className="fas fa-triangle-exclamation"></i> Heads up — your order contains{" "}

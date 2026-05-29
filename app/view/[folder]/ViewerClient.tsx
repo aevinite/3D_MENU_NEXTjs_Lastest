@@ -7,6 +7,9 @@ import PublicModelViewer from "@/components/PublicModelViewer";
 import InfinityLoader from "@/components/InfinityLoader";
 import { modelLoader } from "@/lib/modelLoader";
 import { modelWatchlist } from "@/lib/modelWatchlist";
+import { getMenuItem, type MenuItem } from "@/lib/menu";
+import { allergenIcon, allergenLabel } from "@/lib/allergens";
+import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 
 interface PublicConfig {
   modelUrl?: string;
@@ -44,6 +47,10 @@ export default function ViewerClient({ folder }: { folder: string }) {
   const [loaderVisible, setLoaderVisible] = useState(true);
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
   const [showTryAgain, setShowTryAgain] = useState(false);
+  const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
+  const [currency, setCurrency] = useState<CurrencyMeta | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [hintVisible, setHintVisible] = useState(false);
   const mvRef = useRef<ModelViewerElement>(null);
   const startedRef = useRef(false);
   const requestRef = useRef<number>(0);
@@ -51,6 +58,51 @@ export default function ViewerClient({ folder }: { folder: string }) {
   const searchParams = useSearchParams();
   const fromSlug = searchParams.get("from") || "";
   const backHref = fromSlug ? `/item/${fromSlug}` : "/menu";
+
+  // The bar's name/stats/price come from the actual MENU item, not config.json
+  // (config is only the hotspots/tags). Falls back to config if the item is missing.
+  useEffect(() => {
+    setCurrency(getCurrency());
+    if (fromSlug) getMenuItem(fromSlug).then(setMenuItem).catch(() => {});
+  }, [fromSlug]);
+
+  // Open the SAME confirm popup the dish-detail page uses (qty picker + total),
+  // handled by the globally-mounted OrderConfirmModal.
+  const addToOrder = () => {
+    if (!menuItem) return;
+    window.dispatchEvent(
+      new CustomEvent("lfh:open-order-confirm", {
+        detail: {
+          item: {
+            id: menuItem.id,
+            title: menuItem.title,
+            price: menuItem.price,
+            image: menuItem.image,
+          },
+        },
+      })
+    );
+  };
+
+  const showPrice = (p: string) => (currency ? formatPrice(p, currency) : `$${p}`);
+
+  // The replay hint gently pops in shortly after the dish appears, lingers ~3s,
+  // fades, then repeats every 7s — a soft reminder, never forced on screen.
+  useEffect(() => {
+    if (!barVisible) return;
+    let hideTimer: ReturnType<typeof setTimeout>;
+    const pop = () => {
+      setHintVisible(true);
+      hideTimer = setTimeout(() => setHintVisible(false), 3000);
+    };
+    const first = setTimeout(pop, 1200);
+    const loop = setInterval(pop, 7000);
+    return () => {
+      clearTimeout(first);
+      clearTimeout(hideTimer);
+      clearInterval(loop);
+    };
+  }, [barVisible]);
 
   useEffect(() => {
     const normalizedFolder = (folder || "");
@@ -399,7 +451,7 @@ export default function ViewerClient({ folder }: { folder: string }) {
         </div>
       </div>
 
-      <div id="dbl-hint">👆 Triple-tap to replay animation</div>
+      <div id="dbl-hint" className={hintVisible ? "show" : ""}>👆 Triple-tap to replay</div>
 
       {config && activeUrl && (
         <PublicModelViewer
@@ -410,42 +462,67 @@ export default function ViewerClient({ folder }: { folder: string }) {
 
       <div id="bar" className={barVisible ? "on" : ""}>
         <div className="dname" id="dish-title">
-          {config?.title || ""}
+          {menuItem?.title || config?.title || ""}
         </div>
         <div className="dsub" id="dish-sub">
-          {config?.subtitle || ""}
+          {menuItem?.description || config?.subtitle || ""}
         </div>
         <div className="srow">
           <div>
-            <div className="sv" id="stat-cal">
-              {config?.stats?.calories || "—"}
-            </div>
+            <div className="sv" id="stat-cal">{menuItem?.nutrition.calories || config?.stats?.calories || "—"}</div>
             <div className="sl">Calories</div>
           </div>
           <div>
-            <div className="sv" id="stat-pro">
-              {config?.stats?.protein || "—"}
-            </div>
+            <div className="sv" id="stat-pro">{menuItem?.nutrition.protein || config?.stats?.protein || "—"}</div>
             <div className="sl">Protein</div>
           </div>
           <div>
-            <div className="sv" id="stat-carb">
-              {config?.stats?.carbs || "—"}
-            </div>
+            <div className="sv" id="stat-carb">{menuItem?.nutrition.carbs || config?.stats?.carbs || "—"}</div>
             <div className="sl">Carbs</div>
           </div>
           <div>
-            <div className="sv" id="stat-price">
-              {config?.stats?.price || "—"}
-            </div>
+            <div className="sv" id="stat-price">{menuItem ? showPrice(menuItem.price) : config?.stats?.price || "—"}</div>
             <div className="sl">Price</div>
           </div>
         </div>
         <div className="brow">
-          <button className="badd">🛒 Add to Order</button>
-          <button className="binfo">ℹ</button>
+          <button className="badd" onClick={addToOrder} disabled={!menuItem}>🛒 Add to Order</button>
+          <button className="binfo" onClick={() => setShowInfo(true)} aria-label="Dish details">ℹ</button>
         </div>
       </div>
+
+      {showInfo && menuItem && (
+        <div className="vinfo-overlay" onClick={() => setShowInfo(false)}>
+          <div className="vinfo-sheet" onClick={(e) => e.stopPropagation()}>
+            <button className="vinfo-close" aria-label="Close" onClick={() => setShowInfo(false)}>
+              <i className="fas fa-times"></i>
+            </button>
+            <div className="vinfo-title">{menuItem.title}</div>
+            <div className="vinfo-meta">{menuItem.rating} ★ · {showPrice(menuItem.price)}</div>
+            {menuItem.longDescription && <p className="vinfo-desc">{menuItem.longDescription}</p>}
+            {menuItem.ingredients.length > 0 && (
+              <>
+                <div className="vinfo-label">Ingredients</div>
+                <div className="vinfo-chips">
+                  {menuItem.ingredients.map((ing, i) => (
+                    <span key={i} className="vinfo-chip">{ing.emoji} {ing.name}</span>
+                  ))}
+                </div>
+              </>
+            )}
+            {menuItem.allergens.length > 0 && (
+              <>
+                <div className="vinfo-label">Contains</div>
+                <div className="vinfo-chips">
+                  {menuItem.allergens.map((a) => (
+                    <span key={a} className="vinfo-chip warn">{allergenIcon(a)} {allergenLabel(a)}</span>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

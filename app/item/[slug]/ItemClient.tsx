@@ -476,7 +476,6 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
 
         <div className="price-row">
           <span className="detail-price" id="detail-price">{currency ? formatPrice(item.price, currency) : `$${item.price}`}</span>
-          <span className="price-label">{t.startingPrice}</span>
         </div>
         
         <div className="stats-row" id="stats-row">
@@ -497,17 +496,6 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
             <div className="stat-label">{t.sugar}</div>
           </div>
         </div>
-
-        {item.allergens.length > 0 && (
-          <div className="allergens-box">
-            <span className="allergens-label">Contains</span>
-            <div className="allergens-list">
-              {item.allergens.map((a) => (
-                <span key={a} className="allergen-chip">{allergenIcon(a)} {allergenLabel(a)}</span>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="section-label">{t.aboutDish}</div>
         <div className="desc-box">
@@ -544,6 +532,16 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
               );
             })}
           </div>}
+          {descExpanded && item.allergens.length > 0 && (
+            <>
+              <div className="ing-inside-label">Contains</div>
+              <div className="allergens-list">
+                {item.allergens.map((a) => (
+                  <span key={a} className="allergen-chip">{allergenIcon(a)} {allergenLabel(a)}</span>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="btn-row">

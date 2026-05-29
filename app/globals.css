@@ -537,6 +537,20 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   border-bottom: none;
 }
 .search-container { position: relative; width: 100%; }
+/* search autocomplete dropdown */
+.search-dropdown {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 40;
+  background: #1b120c; border: 1px solid rgba(212,165,116,0.3); border-radius: 14px;
+  overflow: hidden; max-height: 340px; overflow-y: auto; box-shadow: 0 16px 44px rgba(0,0,0,0.55);
+  animation: fadeIn 0.18s ease;
+}
+.search-result { display: flex; align-items: center; gap: 12px; padding: 10px 14px; text-decoration: none; border-bottom: 1px solid rgba(212,165,116,0.1); }
+.search-result:last-child { border-bottom: none; }
+.search-result:hover, .search-result:active { background: rgba(212,165,116,0.12); }
+.search-result-img { width: 42px; height: 42px; border-radius: 9px; object-fit: cover; flex: none; background: rgba(212,165,116,0.08); }
+.search-result-name { flex: 1; min-width: 0; color: var(--text); font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-result-cat { color: var(--muted); font-size: 12px; flex: none; text-transform: capitalize; }
+[data-theme="light"] .search-dropdown { background: #fff; }
 .search-input {
   width: 100%; background: rgba(26,15,10,0.6); border: var(--border);
   padding: 10px 14px 10px 40px; border-radius: 14px; color: var(--text);
@@ -570,13 +584,20 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 .allergen-chip.warn { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.5); color: #fca5a5; }
 
 /* billing + allergy step (cart panel) */
-.allergy-section { margin: 6px 0 14px; }
+.allergy-section { margin: 8px 0 16px; padding: 14px; border: 1px solid rgba(212,165,116,0.18); border-radius: 14px; background: rgba(212,165,116,0.05); }
 .allergy-section h4 { font-size: 13px; color: var(--text); margin: 0 0 10px; font-weight: 700; }
 .allergy-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .allergy-toggle { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: rgba(212,165,116,0.08); border: 1px solid rgba(212,165,116,0.3); color: var(--muted); cursor: pointer; transition: all 0.2s; }
 .allergy-toggle.on { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.6); color: #fca5a5; font-weight: 700; }
 .allergy-warning { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; font-size: 13px; line-height: 1.45; }
 .cart-item-warn { font-size: 12px; color: #fca5a5; margin-top: 4px; }
+.cart-item-allergens { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.allergen-dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; font-size: 11px; line-height: 1;
+  background: rgba(245,236,221,0.06); border: 1px solid rgba(245,236,221,0.12); cursor: default;
+}
+.allergen-dot.flag { background: rgba(239,68,68,0.16); border-color: rgba(239,68,68,0.55); }
 .bill-rows { margin: 4px 0 14px; }
 .bill-line { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); padding: 4px 0; }
 .bill-line.grand { color: var(--text); font-weight: 700; font-size: 16px; border-top: 1px solid rgba(212,165,116,0.2); margin-top: 6px; padding-top: 10px; }
@@ -639,6 +660,13 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 }
 .item-card:hover::before { opacity: 0.05; }
 .item-card:active { transform: translateY(-4px) scale(0.98); }
+/* On touch devices :hover sticks after a tap (image stayed scaled). Neutralise it. */
+@media (hover: none) {
+  .item-card:hover { transform: none; }
+  .item-card:hover .dish-thumb { transform: none; }
+  .item-card:hover .diet-badge { transform: none; }
+  .item-card:hover .dish-price { transform: none; }
+}
 .item-card.is-4d { 
   box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
   border-color: rgba(6, 182, 212, 0.4);
@@ -660,6 +688,11 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 .gallery-mode .dish-thumb { width: 100%; height: 100%; border-radius: 14px; }
+/* Uniform name area in gallery so short and long names line up the same */
+.gallery-mode .dish-name {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-height: 2.5em; line-height: 1.25; font-size: 14px;
+}
 .badge-4d {
   position: absolute; bottom: 10px; right: 10px;
   background: linear-gradient(135deg, #083344 0%, #164e63 100%);
@@ -691,9 +724,9 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 .gallery-mode .diet-badge { right: 14px; top: 14px; }
 .gallery-mode .badge-4d { right: 14px; bottom: 14px; }
 .dish-info { flex: 1; position: relative; z-index: 1; }
-.dish-name { 
-  font-weight: 700; font-size: 15px; margin-bottom: 6px; color: var(--text); 
-  display: flex; align-items: center; gap: 8px;
+.dish-name {
+  font-weight: 700; font-size: 15px; margin-bottom: 6px; color: var(--text);
+  padding-right: 32px; /* reserve space so the name + 4D cube never slide under the top-right veg badge on mobile */
   transition: color 0.3s;
 }
 .item-card:hover .dish-name { color: #f5a623; }
@@ -1033,11 +1066,38 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   50%,100%{left:100%;}
 }
 .viewer-wrapper #dbl-hint{
-  position:fixed;bottom:175px;left:50%;transform:translateX(-50%);
-  color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:1.5px;
-  text-transform:uppercase;z-index:20;pointer-events:none;
-  transition:opacity 0.5s;
+  position:fixed;bottom:176px;left:50%;z-index:25;pointer-events:none;white-space:nowrap;
+  display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:999px;
+  background:rgba(16,14,11,0.42);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(245,236,221,0.10);
+  color:rgba(245,236,221,0.70);font-size:11.5px;letter-spacing:0.3px;font-weight:500;
+  box-shadow:0 4px 16px rgba(0,0,0,0.25);
+  opacity:0;transform:translate(-50%,10px);
+  transition:opacity 0.6s ease, transform 0.6s cubic-bezier(0.22,1,0.36,1);
 }
+/* Gentle, blended pop — rises in, breathes softly, fades out. Nothing forceful. */
+.viewer-wrapper #dbl-hint.show{
+  opacity:1;transform:translate(-50%,0);
+  animation:hintFloat 2.8s ease-in-out infinite;
+}
+@keyframes hintFloat{
+  0%,100%{transform:translate(-50%,0);}
+  50%{transform:translate(-50%,-4px);}
+}
+/* dish info panel (the ℹ button in the 3D view) */
+.vinfo-overlay{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;animation:vinfoFade 0.25s ease;}
+@keyframes vinfoFade{from{opacity:0;}to{opacity:1;}}
+.vinfo-sheet{position:relative;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;background:#1a120c;border:1px solid rgba(212,165,116,0.25);border-radius:20px 20px 0 0;padding:26px 22px 30px;animation:vinfoUp 0.32s cubic-bezier(0.22,1,0.36,1);}
+@keyframes vinfoUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.vinfo-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(212,165,116,0.3);background:transparent;color:var(--text);cursor:pointer;font-size:15px;}
+.vinfo-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px;padding-right:40px;}
+.vinfo-meta{color:var(--accent);font-size:14px;font-weight:600;margin-bottom:14px;}
+.vinfo-desc{color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 16px;}
+.vinfo-label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin:14px 0 8px;}
+.vinfo-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.vinfo-chip{font-size:13px;padding:5px 11px;border-radius:999px;background:rgba(212,165,116,0.1);border:1px solid rgba(212,165,116,0.3);color:var(--text);}
+.vinfo-chip.warn{background:rgba(239,68,68,0.14);border-color:rgba(239,68,68,0.5);color:#fca5a5;}
+.vinfo-add{margin-top:22px;width:100%;padding:14px;border:none;border-radius:14px;background:var(--accent-grad,#d4a574);color:#1a0f0a;font-weight:700;font-size:15px;cursor:pointer;}
 .viewer-wrapper #bar{
   position:fixed;bottom:0;left:0;right:0;z-index:30;
   background:linear-gradient(to top,rgba(0,0,0,0.95) 55%,transparent);
@@ -2375,7 +2435,7 @@ a:focus:not(:focus-visible) { outline: none; }
 }
 
 /* --- 4D CUBE ICON in dish name (next to title in food card) --- */
-.dish-4d-icon { font-size: 11px; color: var(--cyan); }
+.dish-4d-icon { font-size: 11px; color: var(--cyan); margin-left: 6px; vertical-align: 0; }
 [data-theme="light"] .dish-4d-icon { color: #0891b2; }
 
 /* --- HALF-STAR: fix vertical alignment in rating row --- */
