@@ -2455,3 +2455,55 @@ a:focus:not(:focus-visible) { outline: none; }
   align-items: center;
   color: var(--accent);
 }
+
+/* --- GUEST ORDER TRACKER (live status strip) --- */
+.order-tracker {
+  position: fixed;
+  left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 60; width: min(340px, calc(100vw - 32px));
+  display: flex; align-items: center; gap: 12px; padding: 13px 14px;
+  border-radius: 16px;
+  background: rgba(20,17,13,0.82); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212,165,116,0.28);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+  color: var(--text);
+  animation: otRise 0.5s cubic-bezier(0.22,1,0.36,1) both;
+  --ot-accent: #d4a574;
+}
+.order-tracker.status-preparing { --ot-accent: #e8a13c; }
+.order-tracker.status-served { --ot-accent: #4ade80; }
+.order-tracker.status-cancelled { --ot-accent: #ef4444; }
+.order-tracker { border-color: color-mix(in srgb, var(--ot-accent) 38%, transparent); }
+@keyframes otRise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+.ot-icon {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+  color: var(--ot-accent);
+  background: color-mix(in srgb, var(--ot-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 35%, transparent);
+}
+.order-tracker.status-preparing .ot-icon { animation: otPulse 1.5s ease-in-out infinite; }
+@keyframes otPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+.ot-body { flex: 1; min-width: 0; }
+.ot-top { display: flex; align-items: center; gap: 8px; }
+.ot-label { font-weight: 700; font-size: 14px; color: var(--text); }
+.ot-table { font-size: 11px; color: var(--muted); margin-left: auto; white-space: nowrap; }
+.ot-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.ot-steps { display: flex; gap: 5px; margin-top: 9px; }
+.ot-step {
+  flex: 1; height: 4px; border-radius: 999px;
+  background: rgba(245,236,221,0.14); transition: background 0.4s ease;
+}
+.ot-step.done { background: var(--ot-accent); }
+.ot-step.active { animation: otStep 1.4s ease-in-out infinite; }
+@keyframes otStep { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+.ot-close {
+  flex: 0 0 auto; background: transparent; border: none; color: var(--muted);
+  cursor: pointer; font-size: 15px; padding: 6px; line-height: 1; align-self: flex-start;
+}
+.ot-close:hover { color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  .order-tracker, .order-tracker .ot-icon, .ot-step.active { animation: none !important; }
+}

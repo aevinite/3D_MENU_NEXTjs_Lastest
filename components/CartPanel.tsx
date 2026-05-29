@@ -121,7 +121,7 @@ export default function CartPanel() {
     setPlacing(true);
     try {
       const allergies = [...declared, ...(otherAllergy.trim() ? [otherAllergy.trim()] : [])];
-      await createOrder({
+      const orderId = await createOrder({
         tableNumber,
         items: cart.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty })),
         subtotal,
@@ -129,6 +129,22 @@ export default function CartPanel() {
         total,
         allergies,
       });
+      // Remember this order on THIS device so the guest can follow its status.
+      try {
+        const raw = localStorage.getItem("lfh_active_orders");
+        const list = raw ? JSON.parse(raw) : [];
+        const active = Array.isArray(list) ? list : [];
+        active.push({
+          id: orderId,
+          tableNumber: tableNumber.trim(),
+          total,
+          itemCount,
+          status: "received",
+          placedAt: Date.now(),
+        });
+        localStorage.setItem("lfh_active_orders", JSON.stringify(active));
+        window.dispatchEvent(new Event("lfh:order-placed"));
+      } catch {}
       const msg = tableNumber.trim() ? `Order placed for table ${tableNumber.trim()}! 🎉` : "Order placed! 🎉";
       window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: msg } }));
       setCart([]); saveCart([]); setTableNumber(""); setDeclared([]); setOtherAllergy(""); setOtherOpen(false);

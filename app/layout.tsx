@@ -3,6 +3,7 @@ import { type Viewport } from "next";
 import "./globals.css";
 import ModelToastHost from "@/components/ModelToastHost";
 import OrderConfirmModal from "@/components/OrderConfirmModal";
+import OrderTracker from "@/components/OrderTracker";
 
 export const metadata: Metadata = {
   title: "Little French House - 4D Menu",
@@ -39,6 +40,7 @@ export default function RootLayout({
         {children}
         <ModelToastHost />
         <OrderConfirmModal />
+        <OrderTracker />
       </body>
     </html>
   );

@@ -98,16 +98,40 @@ export interface OrderInput {
   total: number;
   allergies: string[];
 }
-export async function createOrder(o: OrderInput): Promise<void> {
+// Order lifecycle status. The restaurant advances received -> preparing -> served.
+export type OrderStatus = "received" | "preparing" | "served" | "cancelled";
+
+// Returns the new order's id. We generate the id on the client so the guest's
+// device can follow ONLY its own order later (the table is insert-only for the
+// public, so we can't read the id back via .select()).
+export async function createOrder(o: OrderInput): Promise<string> {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const { error } = await supabase.from("orders").insert({
+    id,
     table_number: o.tableNumber || null,
     items: o.items,
     subtotal: o.subtotal,
     tax: o.tax,
     total: o.total,
     allergies: o.allergies,
+    status: "received",
   });
   if (error) throw new Error(`Order failed: ${error.message}`);
+  return id;
+}
+
+// A guest reads only their own order's status via a SECURITY DEFINER function
+// (migration 006), so no one can list everyone else's orders.
+export async function getOrderStatus(
+  id: string
+): Promise<{ status: OrderStatus; tableNumber: string | null; createdAt: string } | null> {
+  const { data, error } = await supabase.rpc("get_order_status", { order_id: id });
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const row = data[0] as { status: OrderStatus; table_number: string | null; created_at: string };
+  return { status: row.status, tableNumber: row.table_number, createdAt: row.created_at };
 }
 
 // All menu items, in the order set by `sort_order`.
