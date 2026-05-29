@@ -561,6 +561,25 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 .filter-row { display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; padding: 8px 2px; }
 .filter-row::-webkit-scrollbar { display: none; }
 .chip-divider { width: 1px; height: 22px; align-self: center; flex: none; margin: 0 4px; background: rgba(212,165,116,0.3); border-radius: 1px; }
+
+/* allergens (dish page + checkout) */
+.allergens-box { margin: 20px 0 6px; }
+.allergens-label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px; }
+.allergens-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.allergen-chip { font-size: 13px; padding: 5px 11px; border-radius: 999px; background: rgba(212,165,116,0.1); border: 1px solid rgba(212,165,116,0.3); color: var(--text); }
+.allergen-chip.warn { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.5); color: #fca5a5; }
+
+/* billing + allergy step (cart panel) */
+.allergy-section { margin: 6px 0 14px; }
+.allergy-section h4 { font-size: 13px; color: var(--text); margin: 0 0 10px; font-weight: 700; }
+.allergy-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.allergy-toggle { font-size: 13px; padding: 6px 12px; border-radius: 999px; background: rgba(212,165,116,0.08); border: 1px solid rgba(212,165,116,0.3); color: var(--muted); cursor: pointer; transition: all 0.2s; }
+.allergy-toggle.on { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.6); color: #fca5a5; font-weight: 700; }
+.allergy-warning { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; font-size: 13px; line-height: 1.45; }
+.cart-item-warn { font-size: 12px; color: #fca5a5; margin-top: 4px; }
+.bill-rows { margin: 4px 0 14px; }
+.bill-line { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); padding: 4px 0; }
+.bill-line.grand { color: var(--text); font-weight: 700; font-size: 16px; border-top: 1px solid rgba(212,165,116,0.2); margin-top: 6px; padding-top: 10px; }
 .filter-chip {
   padding: 6px 10px;
   min-width: 48px;

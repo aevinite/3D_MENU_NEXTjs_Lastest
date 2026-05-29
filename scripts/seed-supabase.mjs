@@ -97,6 +97,7 @@ function toRow(item, index) {
     // Filter tags. Fall back to deriving from the veg flag so older menu.json
     // files without a `tags` field still seed sensibly.
     tags: item.tags ?? (item.veg ? ["veg"] : ["non-veg"]),
+    allergens: item.allergens ?? [],
     sort_order: index,
   };
 }

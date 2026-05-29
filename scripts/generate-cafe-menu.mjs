@@ -241,6 +241,25 @@ function buildIngredients(title, catSlug) {
 const categories = CATEGORIES.map((c, i) => ({ ...c, sortOrder: i + 1 }));
 const filters = FILTERS.map((f, i) => ({ ...f, sortOrder: i + 1 }));
 
+// Derive allergens from the dish title + its ingredient names. Heuristic — the
+// owner can fine-tune any dish in the editor afterwards.
+const ALLERGEN_KEYWORDS = [
+  ["gluten", ["bread", "croissant", "pasta", "pizza", "dough", "flour", "waffle", "pancake", "crepe", "crêpe", "brownie", "cookie", "arancini", "tortellini", "ravioli", "fettuccine", "tagliatelle", "gnocchi", "macaroni", "sandwich", "crostino", "bagel", "cake", "cheesecake", "danish", "muffin", "roll", "bun", "cracker", "nacho", "tear", "fries", "risotto"]],
+  ["dairy", ["cheese", "cream", "mozzarella", "ricotta", "feta", "butter", "milk", "parmesan", "latte", "cappuccino", "mocha", "frappe", "nutella", "chocolate", "mascarpone", "cottage", "alfredo", "bechamel", "gratin", "macaroni", "espresso"]],
+  ["eggs", ["egg", "pancake", "waffle", "crepe", "crêpe", "brownie", "mayo", "carbonara", "cake"]],
+  ["nuts", ["nut", "almond", "hazelnut", "pesto", "praline", "walnut", "pecan", "cashew", "pistachio", "nutella"]],
+  ["soy", ["soy", "tofu", "edamame", "miso"]],
+  ["fish", ["fish", "salmon", "tuna", "anchovy", "seafood", "shrimp", "prawn", "calamari", "squid", "lobster", "crab", "poke"]],
+];
+function deriveAllergens(title, ingredients) {
+  const hay = (title + " " + ingredients.map((i) => i.name).join(" ")).toLowerCase();
+  const out = [];
+  for (const [allergen, kws] of ALLERGEN_KEYWORDS) {
+    if (kws.some((k) => hay.includes(k))) out.push(allergen);
+  }
+  return out;
+}
+
 const items = [];
 let order = 0;
 for (const cat of CATEGORIES) {
@@ -257,6 +276,8 @@ for (const cat of CATEGORIES) {
     if (CHEF_SPECIAL.has(slug)) tags.push("chef-special");
     if (NEW_ITEMS.has(slug)) tags.push("new");
     if (parseFloat(rating) >= 4.8) tags.push("top-rated");
+
+    const ing = buildIngredients(name, cat.slug);
 
     items.push({
       id: slug,
@@ -275,7 +296,8 @@ for (const cat of CATEGORIES) {
       rating,
       time: CAT_TIME[cat.slug],
       nutrition: buildNutrition(meta, baseTags),
-      ingredients: buildIngredients(name, cat.slug),
+      ingredients: ing,
+      allergens: deriveAllergens(name, ing),
       reviews: buildReviews(name, seed),
       tags,
       sort_order: order++,

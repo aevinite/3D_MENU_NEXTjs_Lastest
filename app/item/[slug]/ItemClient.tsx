@@ -7,6 +7,7 @@ import StarRating from "@/components/StarRating";
 import InfinityLoader from "@/components/InfinityLoader";
 import { modelLoader } from "@/lib/modelLoader";
 import { getMenuItems } from "@/lib/menu";
+import { allergenIcon, allergenLabel } from "@/lib/allergens";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n";
 import VegIcon from "@/components/VegIcon";
@@ -43,6 +44,7 @@ interface FoodItem {
     text: string;
   }[];
   relatedSlugs: string[];
+  allergens: string[];
 }
 
 export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: string }) {
@@ -495,6 +497,17 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
             <div className="stat-label">{t.sugar}</div>
           </div>
         </div>
+
+        {item.allergens.length > 0 && (
+          <div className="allergens-box">
+            <span className="allergens-label">Contains</span>
+            <div className="allergens-list">
+              {item.allergens.map((a) => (
+                <span key={a} className="allergen-chip">{allergenIcon(a)} {allergenLabel(a)}</span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="section-label">{t.aboutDish}</div>
         <div className="desc-box">

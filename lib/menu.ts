@@ -31,6 +31,7 @@ export interface MenuItem {
   reviews: { name: string; rating: number; text: string }[];
   relatedSlugs: string[];
   tags: string[];
+  allergens: string[];
 }
 
 // A label that exists in several languages, e.g. { en: "Burgers", de: "Burger" }.
@@ -83,7 +84,30 @@ function mapRow(row: any): MenuItem {
     reviews: row.reviews ?? [],
     relatedSlugs: row.related_slugs ?? [],
     tags: row.tags ?? [],
+    allergens: row.allergens ?? [],
   };
+}
+
+// Record a placed order. Public (anon) insert is allowed by RLS; the order is
+// write-only for the public — only the owner (service role) can read orders back.
+export interface OrderInput {
+  tableNumber: string;
+  items: { id: string; title: string; price: string; qty: number }[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  allergies: string[];
+}
+export async function createOrder(o: OrderInput): Promise<void> {
+  const { error } = await supabase.from("orders").insert({
+    table_number: o.tableNumber || null,
+    items: o.items,
+    subtotal: o.subtotal,
+    tax: o.tax,
+    total: o.total,
+    allergies: o.allergies,
+  });
+  if (error) throw new Error(`Order failed: ${error.message}`);
 }
 
 // All menu items, in the order set by `sort_order`.
