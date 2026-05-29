@@ -1130,13 +1130,16 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 @keyframes vinfoFade{from{opacity:0;}to{opacity:1;}}
 .vinfo-sheet{position:relative;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;background:#1a120c;border:1px solid rgba(212,165,116,0.25);border-radius:20px 20px 0 0;padding:26px 22px 30px;animation:vinfoUp 0.32s cubic-bezier(0.22,1,0.36,1);}
 @keyframes vinfoUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
-.vinfo-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(212,165,116,0.3);background:transparent;color:var(--text);cursor:pointer;font-size:15px;}
-.vinfo-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px;padding-right:40px;}
-.vinfo-meta{color:var(--accent);font-size:14px;font-weight:600;margin-bottom:14px;}
-.vinfo-desc{color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 16px;}
-.vinfo-label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin:14px 0 8px;}
+/* The sheet is always dark (it sits over the 3D scene), so its text is locked to
+   cream/gold regardless of the site theme — otherwise light mode makes the theme
+   var(--text) dark and it vanishes against the dark sheet. */
+.vinfo-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(212,165,116,0.3);background:transparent;color:#f5ecdd;cursor:pointer;font-size:15px;}
+.vinfo-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#f7efe2;margin-bottom:4px;padding-right:40px;}
+.vinfo-meta{color:#e6b585;font-size:14px;font-weight:600;margin-bottom:14px;}
+.vinfo-desc{color:rgba(245,236,221,0.78);font-size:14px;line-height:1.55;margin:0 0 16px;}
+.vinfo-label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:rgba(245,236,221,0.6);font-weight:700;margin:14px 0 8px;}
 .vinfo-chips{display:flex;flex-wrap:wrap;gap:8px;}
-.vinfo-chip{font-size:13px;padding:5px 11px;border-radius:999px;background:rgba(212,165,116,0.1);border:1px solid rgba(212,165,116,0.3);color:var(--text);}
+.vinfo-chip{font-size:13px;padding:5px 11px;border-radius:999px;background:rgba(212,165,116,0.14);border:1px solid rgba(212,165,116,0.3);color:#f5ecdd;}
 .vinfo-chip.warn{background:rgba(239,68,68,0.14);border-color:rgba(239,68,68,0.5);color:#fca5a5;}
 .vinfo-add{margin-top:22px;width:100%;padding:14px;border:none;border-radius:14px;background:var(--accent-grad,#d4a574);color:#1a0f0a;font-weight:700;font-size:15px;cursor:pointer;}
 .viewer-wrapper #bar{
