@@ -288,7 +288,7 @@ for (const cat of CATEGORIES) {
       category: cat.slug,
       veg: !!veg,
       is4d,
-      modelFolder: is4d ? "croissant" : null,
+      modelFolder: is4d ? "MP" : null, // matches public/content/items/MP/config.json
       modelSmallUrl: is4d ? GLB_SMALL : null,
       modelOptimizedUrl: is4d ? GLB_OPTIMIZED : null,
       description: meta.short(name),

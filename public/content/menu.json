@@ -1124,7 +1124,7 @@
       "category": "croissants",
       "veg": true,
       "is4d": true,
-      "modelFolder": "croissant",
+      "modelFolder": "MP",
       "modelSmallUrl": "https://cstpqxvsurtzrwwjzyoj.supabase.co/storage/v1/object/public/Models/croissant/croissant_small.glb",
       "modelOptimizedUrl": "https://cstpqxvsurtzrwwjzyoj.supabase.co/storage/v1/object/public/Models/croissant/croissant-optimized.glb",
       "description": "Flaky all-butter croissant, filled avocado & cream cheese style.",
