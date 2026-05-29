@@ -42,6 +42,7 @@ const writeCart = (cart: CartItem[]) => {
 export default function FoodCard({ item, index, viewingCategory }: { item: FoodItem; index: number; viewingCategory?: string }) {
   const [cartQty, setCartQty] = useState(0);
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const thumbRef = useRef<HTMLDivElement>(null);
 
   // Pop the image on every add (works on touch too, where there's no hover).
@@ -94,7 +95,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
         className={`item-card fade-in ${item.is4d ? "is-4d" : ""}`}
         style={{ animationDelay: `${index * 0.06}s` }}
       >
-        <div className="thumb-wrapper" ref={thumbRef}>
+        <div className={`thumb-wrapper ${imgLoaded ? "img-ready" : "img-loading"}`} ref={thumbRef}>
           <Image
             className="dish-thumb"
             src={item.image}
@@ -102,6 +103,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
             width={110}
             height={110}
             sizes="(max-width: 600px) 86px, 110px"
+            onLoad={() => setImgLoaded(true)}
           />
           {item.is4d ? (
             <div className="badge-4d">

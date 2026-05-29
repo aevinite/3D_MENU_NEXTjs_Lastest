@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
-import { getMenuItems, createOrder } from "@/lib/menu";
+import { getMenuItems, createOrder, type MenuItem } from "@/lib/menu";
 import { ALLERGENS, allergenIcon, allergenLabel } from "@/lib/allergens";
 
 interface CartItem {
@@ -36,6 +36,7 @@ export default function CartPanel() {
   const [tableNumber, setTableNumber] = useState("");
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const [allergenMap, setAllergenMap] = useState<Record<string, string[]>>({});
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [declared, setDeclared] = useState<string[]>([]); // allergens the diner avoids
   const [otherAllergy, setOtherAllergy] = useState(""); // free-text allergy not in the list
   const [otherOpen, setOtherOpen] = useState(false); // reveal the free-text field
@@ -85,6 +86,7 @@ export default function CartPanel() {
         const m: Record<string, string[]> = {};
         items.forEach((i) => (m[i.id] = i.allergens || []));
         setAllergenMap(m);
+        setMenuItems(items);
       })
       .catch(() => {});
 
@@ -115,6 +117,24 @@ export default function CartPanel() {
   const orderDeclaredHits = [...new Set(cart.flatMap((it) => conflicts(it.id)))];
   const toggleDeclared = (slug: string) =>
     setDeclared((d) => (d.includes(slug) ? d.filter((x) => x !== slug) : [...d, slug]));
+
+  // Gentle pairing upsell: the top-rated drink/dessert not already on the bill.
+  const cartIds = new Set(cart.map((c) => c.id));
+  const PAIR_CATS = ["coffee", "beverages", "desserts"];
+  const pairing =
+    cart.length > 0
+      ? menuItems
+          .filter((i) => !cartIds.has(i.id) && PAIR_CATS.includes(i.category))
+          .sort((a, b) => (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0))[0] || null
+      : null;
+  const addPairing = (it: MenuItem) => {
+    const next = [...cart];
+    const idx = next.findIndex((c) => c.id === it.id);
+    if (idx >= 0) next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
+    else next.push({ id: it.id, title: it.title, price: it.price, image: it.image, qty: 1 });
+    commit(next);
+    window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: `${it.title} added` } }));
+  };
 
   const placeOrder = async () => {
     if (cart.length === 0 || placing) return;
@@ -234,6 +254,22 @@ export default function CartPanel() {
 
         {cart.length > 0 && (
           <>
+            {pairing && (
+              <div className="pairing">
+                <div className="pairing-label">✨ Goes well with</div>
+                <div className="pairing-card">
+                  {pairing.image && <img src={pairing.image} alt="" className="pairing-img" />}
+                  <div className="pairing-info">
+                    <div className="pairing-name">{pairing.title}</div>
+                    <div className="pairing-price">{showPrice(parseFloat(pairing.price))}</div>
+                  </div>
+                  <button type="button" className="pairing-add" onClick={() => addPairing(pairing)}>
+                    + Add
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="allergy-section">
               <h4><i className="fas fa-shield-heart"></i> Any allergies? Tap what you avoid</h4>
               <div className="allergy-chips">

@@ -4,6 +4,7 @@ import "./globals.css";
 import ModelToastHost from "@/components/ModelToastHost";
 import OrderConfirmModal from "@/components/OrderConfirmModal";
 import OrderTracker from "@/components/OrderTracker";
+import MiniCart from "@/components/MiniCart";
 
 export const metadata: Metadata = {
   title: "Little French House - 4D Menu",
@@ -41,6 +42,7 @@ export default function RootLayout({
         <ModelToastHost />
         <OrderConfirmModal />
         <OrderTracker />
+        <MiniCart />
       </body>
     </html>
   );

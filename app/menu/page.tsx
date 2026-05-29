@@ -316,9 +316,20 @@ export default function MenuPage() {
           id="items-container"
           className={`items-container ${layout === "gallery" ? "gallery-mode" : ""}`}
         >
-          {filteredItems.map((item, index) => (
-            <FoodCard key={item.id} item={item} index={index} viewingCategory={currentCategory} />
-          ))}
+          {menuData.length === 0
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={`sk-${i}`} className="item-card skeleton-card" aria-hidden="true">
+                  <div className="sk-thumb"></div>
+                  <div className="sk-lines">
+                    <div className="sk-line w70"></div>
+                    <div className="sk-line w40"></div>
+                    <div className="sk-line w50"></div>
+                  </div>
+                </div>
+              ))
+            : filteredItems.map((item, index) => (
+                <FoodCard key={item.id} item={item} index={index} viewingCategory={currentCategory} />
+              ))}
         </div>
       </div>
     </AppShell>
