@@ -18,12 +18,10 @@ import { useTranslation, useLanguage } from "@/lib/i18n";
 // The card list works with the full MenuItem shape from the data layer.
 type FoodItem = MenuItem;
 
-// Sort options (replace the old dietary filters). Each re-orders the list rather
-// than hiding dishes. Spice level is derived from the dish name/tags.
+// Sort options. Each re-orders the list rather than hiding dishes.
 const SORTS = [
   { slug: "popular", label: "🔥 Popular" },
   { slug: "top-rated", label: "⭐ Top Rated" },
-  { slug: "spicy", label: "🌶️ Spiciest" },
   { slug: "price", label: "💲 Price" },
 ];
 
@@ -33,13 +31,6 @@ const DIETS = [
   { slug: "non-veg", label: "🍖 Non-Veg" },
 ];
 
-const spiceLevel = (it: FoodItem) => {
-  const n = it.title.toLowerCase();
-  if (/tri chilli|piri|buffalo|jalape/.test(n)) return 3;
-  if (it.tags.includes("spicy")) return 2;
-  if (/spiced|chilli|pepper|hot/.test(n)) return 1;
-  return 0;
-};
 const ratingOf = (it: FoodItem) => parseFloat(it.rating) || 0;
 
 export default function MenuPage() {
@@ -194,8 +185,6 @@ export default function MenuPage() {
       }
       case "top-rated":
         return ratingOf(b) - ratingOf(a);
-      case "spicy":
-        return spiceLevel(b) - spiceLevel(a) || ratingOf(b) - ratingOf(a);
       case "price":
         return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
       default:

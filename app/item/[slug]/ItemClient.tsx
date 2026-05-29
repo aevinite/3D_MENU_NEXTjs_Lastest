@@ -58,7 +58,8 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
   const [selectedRating, setSelectedRating] = useState(0);
   const [reviewName, setReviewName] = useState("");
   const [reviewText, setReviewText] = useState("");
-  const [localReviews, setLocalReviews] = useState<{name: string; rating: number; text: string}[]>([]);
+  const [localReviews, setLocalReviews] = useState<{name: string; rating: number; text: string; photo?: string}[]>([]);
+  const [reviewPhoto, setReviewPhoto] = useState<string>("");
   const [reviewTab, setReviewTab] = useState<"rate" | "reviews">("reviews");
   const [imgZoom, setImgZoom] = useState(false);
   const [lbScale, setLbScale] = useState(1);
@@ -322,6 +323,28 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
     );
   };
 
+  // Compress a chosen/captured photo down to a small JPEG data URL so it's light
+  // enough to keep with the review (no upload server, no link — straight from the device).
+  const handleReviewPhoto = (file?: File) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onload = () => {
+        const max = 900;
+        let { width, height } = img;
+        if (width > height && width > max) { height = (height * max) / width; width = max; }
+        else if (height > max) { width = (width * max) / height; height = max; }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d")?.drawImage(img, 0, 0, width, height);
+        setReviewPhoto(canvas.toDataURL("image/jpeg", 0.7));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const submitReview = () => {
     if (!reviewName.trim() || !reviewText.trim() || selectedRating === 0) {
       window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Please fill all fields and select a rating!" } }));
@@ -330,12 +353,14 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
     const newReview = {
       name: reviewName.trim(),
       rating: selectedRating,
-      text: reviewText.trim()
+      text: reviewText.trim(),
+      ...(reviewPhoto ? { photo: reviewPhoto } : {}),
     };
     setLocalReviews([newReview, ...localReviews]);
     setReviewName("");
     setReviewText("");
     setSelectedRating(0);
+    setReviewPhoto("");
     window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Review submitted!" } }));
   };
 
@@ -597,6 +622,24 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
             ></textarea>
+            <label className="review-photo-btn">
+              <i className="fas fa-camera"></i> {reviewPhoto ? "Change photo" : "Add a photo"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={(e) => handleReviewPhoto(e.target.files?.[0])}
+              />
+            </label>
+            {reviewPhoto && (
+              <div className="review-photo-preview">
+                <img src={reviewPhoto} alt="Your review photo" />
+                <button type="button" aria-label="Remove photo" onClick={() => setReviewPhoto("")}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+            )}
             <button className="btn-submit-review" id="submit-review" onClick={submitReview}>{t.submitReview}</button>
           </div>
         )}
@@ -619,6 +662,9 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
                   </div>
                   <div className="review-name">{review.name}</div>
                   <div className="review-comment">{review.text}</div>
+                  {review.photo && (
+                    <img className="review-photo" src={review.photo} alt={`Photo from ${review.name}`} loading="lazy" />
+                  )}
                 </div>
               ))
             )}
