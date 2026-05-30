@@ -170,6 +170,7 @@ export default function OrderConfirmModal() {
           <i className="fas fa-times"></i>
         </button>
 
+        <div className="order-confirm-scroll">
         <img src={item.image} alt={item.title} className="order-confirm-img" />
         <h3 className="order-confirm-title">{item.title}</h3>
         <div className="order-confirm-unit">{fmt(parseFloat(item.price))} base</div>
@@ -254,17 +255,20 @@ export default function OrderConfirmModal() {
           <span aria-live="polite">{qty}</span>
           <button type="button" aria-label="Increase quantity" onClick={() => setQty((q) => Math.min(99, q + 1))}>+</button>
         </div>
-
-        <div className="order-confirm-total">
-          <span>Total</span>
-          <span className="order-confirm-total-val">{fmt(total)}</span>
         </div>
 
-        <div className="order-confirm-actions">
-          <button type="button" className="order-confirm-cancel" onClick={() => setOpen(false)}>Cancel</button>
-          <button type="button" className="order-confirm-add" onClick={confirm} disabled={submitting}>
-            {submitting ? "Saving…" : editSig ? "Update Order" : "Add to Order"}
-          </button>
+        <div className="order-confirm-foot">
+          <div className="order-confirm-total">
+            <span>Total</span>
+            <span className="order-confirm-total-val">{fmt(total)}</span>
+          </div>
+
+          <div className="order-confirm-actions">
+            <button type="button" className="order-confirm-cancel" onClick={() => setOpen(false)}>Cancel</button>
+            <button type="button" className="order-confirm-add" onClick={confirm} disabled={submitting}>
+              {submitting ? "Saving…" : editSig ? "Update Order" : "Add to Order"}
+            </button>
+          </div>
         </div>
       </div>
     </>

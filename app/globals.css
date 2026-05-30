@@ -2035,11 +2035,11 @@ a *:active,
   transform: translate(-50%, -50%);
   z-index: 5500;
   width: min(420px, calc(100vw - 32px));
-  /* Never taller than the screen — scroll inside instead of clipping top/bottom. */
+  /* Never taller than the screen. Middle scrolls; the Total + CTA stay pinned
+     at the bottom so the "Add to Order" button can never be clipped. */
   max-height: 92dvh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
   background: var(--card);
   border: var(--border);
   border-radius: 24px;
@@ -2048,6 +2048,27 @@ a *:active,
   animation: confirmIn 0.25s var(--ease);
   text-align: center;
   color: var(--text);
+}
+.order-confirm-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* room so the last field isn't flush against the pinned footer */
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) transparent;
+}
+.order-confirm-scroll::-webkit-scrollbar { width: 6px; }
+.order-confirm-scroll::-webkit-scrollbar-track { background: transparent; }
+.order-confirm-scroll::-webkit-scrollbar-thumb { background: var(--accent-dim); border-radius: 999px; }
+.order-confirm-foot {
+  flex-shrink: 0;
+  padding-top: 14px;
+  margin-top: 6px;
+  border-top: 1px solid var(--border-color, rgba(212,165,116,0.18));
+  background: var(--card);
 }
 @keyframes confirmIn {
   from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
@@ -2178,10 +2199,9 @@ a *:active,
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 14px 4px;
-  border-top: 1px solid rgba(212,165,116,0.18);
+  padding: 2px 4px 14px;
+  margin-bottom: 14px;
   border-bottom: 1px solid rgba(212,165,116,0.18);
-  margin-bottom: 18px;
 }
 .order-confirm-total span:first-child {
   font-size: 13px;
