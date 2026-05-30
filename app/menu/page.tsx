@@ -14,6 +14,9 @@ import {
   type Category,
 } from "@/lib/menu";
 import { useTranslation, useLanguage } from "@/lib/i18n";
+import { ALLERGENS } from "@/lib/allergens";
+
+const AVOID_KEY = "lfh_avoid_allergens";
 
 // The card list works with the full MenuItem shape from the data layer.
 type FoodItem = MenuItem;
@@ -46,6 +49,23 @@ export default function MenuPage() {
   // Only show skeletons if loading is actually slow — avoids a flash on fast /
   // cached loads where the data is ready almost immediately.
   const [showSkeleton, setShowSkeleton] = useState(false);
+  // Allergy filter: allergens the guest avoids -> dishes containing them are hidden.
+  const [avoid, setAvoid] = useState<string[]>([]);
+  const [showAllergy, setShowAllergy] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(AVOID_KEY);
+      const a = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(a)) setAvoid(a);
+    } catch {}
+  }, []);
+  const toggleAvoid = (slug: string) =>
+    setAvoid((cur) => {
+      const next = cur.includes(slug) ? cur.filter((x) => x !== slug) : [...cur, slug];
+      try { localStorage.setItem(AVOID_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
 
   // Category bar — DB categories plus a curated "Chef's Special" tab (backed by
   // the chef-special tag, not a real category). One category is ALWAYS selected.
@@ -159,8 +179,14 @@ export default function MenuPage() {
     }
     if (currentDiet === "veg" && !item.veg) return false;
     if (currentDiet === "non-veg" && item.veg) return false;
+    // Allergy filter: hide dishes containing any avoided allergen.
+    if (avoid.length && (item.allergens || []).some((a) => avoid.includes(a))) return false;
     return true;
   });
+  const hiddenByAllergy =
+    avoid.length === 0
+      ? 0
+      : menuData.filter((i) => (i.allergens || []).some((a) => avoid.includes(a))).length;
 
   // The search dropdown — top matches across all categories. Name-starts-with
   // first, then by rating.
@@ -297,6 +323,14 @@ export default function MenuPage() {
                     {d.label}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className={`filter-chip ${avoid.length ? "active" : ""}`}
+                  aria-pressed={avoid.length > 0}
+                  onClick={() => setShowAllergy(true)}
+                >
+                  🛡️ Allergies{avoid.length ? ` (${avoid.length})` : ""}
+                </button>
               </div>
               <div className="layout-switch" role="group" aria-label="Layout">
                 <button
@@ -322,6 +356,16 @@ export default function MenuPage() {
           </div>
         </div>
 
+        {avoid.length > 0 && (
+          <div className="allergy-banner">
+            🛡️ Hiding {hiddenByAllergy} dish{hiddenByAllergy !== 1 ? "es" : ""} with{" "}
+            {avoid.map((a) => ALLERGENS.find((x) => x.slug === a)?.label || a).join(", ").toLowerCase()}.
+            <button type="button" onClick={() => { setAvoid([]); try { localStorage.removeItem(AVOID_KEY); } catch {} }}>
+              Show all
+            </button>
+          </div>
+        )}
+
         <div
           id="items-container"
           className={`items-container ${layout === "gallery" ? "gallery-mode" : ""}`}
@@ -344,6 +388,36 @@ export default function MenuPage() {
               ))}
         </div>
       </main>
+
+      {showAllergy && (
+        <>
+          <div className="overlay active" onClick={() => setShowAllergy(false)}></div>
+          <div className="popup active allergy-popup" role="dialog" aria-modal="true" aria-label="Allergy filter">
+            <h2 style={{ fontFamily: "Playfair Display", margin: "0 0 6px", fontSize: 22, fontWeight: 700, color: "var(--text)" }}>
+              Any allergies?
+            </h2>
+            <p style={{ color: "var(--muted)", fontSize: 14, margin: "0 0 18px" }}>
+              Tap what you avoid — we&apos;ll hide those dishes from the whole menu.
+            </p>
+            <div className="allergy-chips">
+              {ALLERGENS.map((a) => (
+                <button
+                  key={a.slug}
+                  type="button"
+                  className={`allergy-toggle ${avoid.includes(a.slug) ? "on" : ""}`}
+                  aria-pressed={avoid.includes(a.slug)}
+                  onClick={() => toggleAvoid(a.slug)}
+                >
+                  {a.icon} {a.label}
+                </button>
+              ))}
+            </div>
+            <button className="btn btn-gold" style={{ marginTop: 22 }} onClick={() => setShowAllergy(false)}>
+              {avoid.length ? `Show safe dishes (${filteredItems.length})` : "Done"}
+            </button>
+          </div>
+        </>
+      )}
     </AppShell>
   );
 }

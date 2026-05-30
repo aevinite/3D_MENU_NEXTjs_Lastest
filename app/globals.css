@@ -626,6 +626,18 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 .allergen-chip.warn { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.5); color: #fca5a5; }
 
 /* billing + allergy step (cart panel) */
+/* menu-wide allergy filter banner + popup */
+.allergy-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 14px; padding: 11px 16px; border-radius: 12px; font-size: 14px;
+  background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.35); color: var(--text);
+}
+.allergy-banner button {
+  margin-left: auto; background: transparent; border: 1px solid var(--accent); color: var(--accent);
+  padding: 5px 12px; border-radius: 999px; font-weight: 600; font-size: 13px; cursor: pointer;
+}
+.allergy-popup { text-align: center; max-width: 420px; }
+.allergy-popup .allergy-chips { justify-content: center; }
 .allergy-section { margin: 8px 0 16px; padding: 14px; border: 1px solid rgba(212,165,116,0.18); border-radius: 14px; background: rgba(212,165,116,0.05); }
 .allergy-section h4 { font-size: 13px; color: var(--text); margin: 0 0 10px; font-weight: 700; }
 .allergy-chips { display: flex; flex-wrap: wrap; gap: 8px; }
