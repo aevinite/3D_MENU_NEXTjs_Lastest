@@ -45,6 +45,7 @@ interface FoodItem {
   }[];
   relatedSlugs: string[];
   allergens: string[];
+  options?: { name: string; type: "single" | "multi"; choices: { label: string; price: number }[] }[];
 }
 
 export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: string }) {
@@ -317,6 +318,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
             price: item.price,
             image: item.image,
           },
+          options: item.options,
         },
       })
     );

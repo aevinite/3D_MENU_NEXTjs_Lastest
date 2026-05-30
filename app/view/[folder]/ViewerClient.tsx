@@ -79,6 +79,7 @@ export default function ViewerClient({ folder }: { folder: string }) {
             price: menuItem.price,
             image: menuItem.image,
           },
+          options: menuItem.options,
         },
       })
     );

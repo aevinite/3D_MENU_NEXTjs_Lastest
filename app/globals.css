@@ -2074,6 +2074,21 @@ a *:active,
   text-transform: uppercase;
   margin-bottom: 18px;
 }
+/* dish customization options in the add popup */
+.oc-group { text-align: left; margin-bottom: 16px; }
+.oc-group-name { font-size: 12px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 9px; }
+.oc-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.oc-choice {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 12px; cursor: pointer;
+  background: rgba(212,165,116,0.07); border: 1px solid rgba(212,165,116,0.3); color: var(--text); font-size: 14px; font-weight: 600;
+  transition: 0.15s;
+}
+.oc-choice.on { background: var(--accent); border-color: var(--accent); color: #2a1d0c; }
+.oc-price { font-size: 12px; opacity: 0.85; }
+/* selected options under a cart line */
+.cart-item-opts { font-size: 12px; color: var(--muted); margin-top: 3px; }
+/* customize button on the card (dishes with options) */
+.customize-btn { background: rgba(212,165,116,0.16) !important; }
 .order-confirm-qty {
   display: flex;
   align-items: center;

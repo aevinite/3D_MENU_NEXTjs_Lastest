@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
+import type { OptionGroup } from "@/lib/menu";
 import VegIcon from "./VegIcon";
 
 interface FoodItem {
@@ -19,6 +20,7 @@ interface FoodItem {
   rating?: string;
   time?: string;
   tags?: string[];
+  options?: OptionGroup[];
 }
 
 const CART_KEY = "lfh_cart";
@@ -72,6 +74,19 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
     };
   }, [item.id]);
 
+  // Dishes with options open the customize popup instead of adding directly.
+  const openCustomize = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    popThumb();
+    window.dispatchEvent(new CustomEvent("lfh:open-order-confirm", {
+      detail: {
+        item: { id: item.id, title: item.title, price: item.price, image: item.image },
+        options: item.options,
+      },
+    }));
+  };
+
   const updateQty = (e: MouseEvent, delta: number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -91,6 +106,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
   };
 
   const soldOut = (item.tags || []).includes("sold-out");
+  const hasOptions = (item.options?.length ?? 0) > 0;
 
   return (
     <Link href={`/item/${item.slug}${viewingCategory ? `?cat=${viewingCategory}` : ""}`} className="item-card-link">
@@ -135,6 +151,16 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
           >
             Not available
           </span>
+        ) : hasOptions ? (
+          <button
+            type="button"
+            className="cart-add-btn customize-btn"
+            onClick={openCustomize}
+            aria-label={`Customize and add ${item.title}`}
+            title="Customize"
+          >
+            <i className="fas fa-sliders"></i>
+          </button>
         ) : cartQty === 0 ? (
           <button
             type="button"

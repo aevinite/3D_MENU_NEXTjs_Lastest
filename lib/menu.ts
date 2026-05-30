@@ -33,6 +33,14 @@ export interface MenuItem {
   tags: string[];
   allergens: string[];
   searchAlias: string; // hidden synonyms for search (e.g. "caesar, healthy")
+  options: OptionGroup[]; // per-dish customization (size, milk, extras…)
+}
+
+// A customization group the owner defines and the guest picks from.
+export interface OptionGroup {
+  name: string;
+  type: "single" | "multi"; // single = pick one (radio), multi = pick any (checkbox)
+  choices: { label: string; price: number }[]; // price is added to the base price
 }
 
 // A label that exists in several languages, e.g. { en: "Burgers", de: "Burger" }.
@@ -87,6 +95,7 @@ function mapRow(row: any): MenuItem {
     tags: row.tags ?? [],
     allergens: row.allergens ?? [],
     searchAlias: row.search_alias ?? "",
+    options: Array.isArray(row.options) ? row.options : [],
   };
 }
 
@@ -94,7 +103,7 @@ function mapRow(row: any): MenuItem {
 // write-only for the public — only the owner (service role) can read orders back.
 export interface OrderInput {
   tableNumber: string;
-  items: { id: string; title: string; price: string; qty: number }[];
+  items: { id: string; title: string; price: string; qty: number; options?: { group: string; label: string; price: number }[] }[];
   subtotal: number;
   tax: number;
   total: number;

@@ -5,12 +5,15 @@ import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 import { getMenuItems, createOrder, type MenuItem } from "@/lib/menu";
 import { ALLERGENS, allergenIcon, allergenLabel } from "@/lib/allergens";
 
+interface CartOption { group: string; label: string; price: number }
 interface CartItem {
   id: string;
   title: string;
   price: string;
   image: string;
   qty: number;
+  options?: CartOption[];
+  sig?: string;
 }
 
 interface HistoryOrder {
@@ -26,7 +29,7 @@ const TAX_RATE = 0.05; // 5% — shown as a line on the bill
 const normalize = (raw: unknown): CartItem[] => {
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((it): it is { id: string; title: string; price: string; image: string; qty?: number } =>
+    .filter((it): it is { id: string; title: string; price: string; image: string; qty?: number; options?: CartOption[]; sig?: string } =>
       !!it && typeof it === "object" && "id" in it
     )
     .map((it) => ({
@@ -35,6 +38,8 @@ const normalize = (raw: unknown): CartItem[] => {
       price: it.price,
       image: it.image,
       qty: typeof it.qty === "number" && it.qty > 0 ? it.qty : 1,
+      options: Array.isArray(it.options) ? it.options : undefined,
+      sig: it.sig,
     }));
 };
 
@@ -172,7 +177,7 @@ export default function CartPanel() {
       const allergies = [...declared, ...(otherAllergy.trim() ? [otherAllergy.trim()] : [])];
       const orderId = await createOrder({
         tableNumber,
-        items: cart.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty })),
+        items: cart.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty, options: it.options })),
         subtotal,
         tax,
         total,
@@ -290,9 +295,14 @@ export default function CartPanel() {
             cart.map((item, idx) => {
               const c = conflicts(item.id);
               return (
-                <div key={item.id} className="cart-item">
+                <div key={`${item.id}-${item.sig || ""}-${idx}`} className="cart-item">
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="cart-item-name">{item.title}</div>
+                    {item.options && item.options.length > 0 && (
+                      <div className="cart-item-opts">
+                        {item.options.map((o) => o.label).join(", ")}
+                      </div>
+                    )}
                     {itemAllergens(item.id).length > 0 && (
                       <div className="cart-item-allergens">
                         {itemAllergens(item.id).map((a) => (
