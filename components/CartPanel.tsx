@@ -206,8 +206,9 @@ export default function CartPanel() {
           items: cart.map((it) => ({ title: it.title, qty: it.qty, price: it.price })),
           placedAt: Date.now(),
         });
-        localStorage.setItem("lfh_order_history", JSON.stringify(hist.slice(0, 25)));
-        setHistory(hist.slice(0, 25));
+        // Kept only in the guest's own browser (never Supabase); persists across visits.
+        localStorage.setItem("lfh_order_history", JSON.stringify(hist.slice(0, 50)));
+        setHistory(hist.slice(0, 50));
       } catch {}
       const msg = tableNumber.trim() ? `Order placed for table ${tableNumber.trim()}! 🎉` : "Order placed! 🎉";
       window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: msg } }));
