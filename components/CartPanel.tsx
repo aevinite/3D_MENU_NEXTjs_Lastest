@@ -13,6 +13,8 @@ interface CartItem {
   image: string;
   qty: number;
   options?: CartOption[];
+  removed?: string[];
+  note?: string;
   sig?: string;
 }
 
@@ -29,7 +31,7 @@ const TAX_RATE = 0.05; // 5% — shown as a line on the bill
 const normalize = (raw: unknown): CartItem[] => {
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((it): it is { id: string; title: string; price: string; image: string; qty?: number; options?: CartOption[]; sig?: string } =>
+    .filter((it): it is { id: string; title: string; price: string; image: string; qty?: number; options?: CartOption[]; removed?: string[]; note?: string; sig?: string } =>
       !!it && typeof it === "object" && "id" in it
     )
     .map((it) => ({
@@ -39,6 +41,8 @@ const normalize = (raw: unknown): CartItem[] => {
       image: it.image,
       qty: typeof it.qty === "number" && it.qty > 0 ? it.qty : 1,
       options: Array.isArray(it.options) ? it.options : undefined,
+      removed: Array.isArray(it.removed) ? it.removed : undefined,
+      note: typeof it.note === "string" ? it.note : undefined,
       sig: it.sig,
     }));
 };
@@ -177,7 +181,7 @@ export default function CartPanel() {
       const allergies = [...declared, ...(otherAllergy.trim() ? [otherAllergy.trim()] : [])];
       const orderId = await createOrder({
         tableNumber,
-        items: cart.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty, options: it.options })),
+        items: cart.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty, options: it.options, removed: it.removed, note: it.note })),
         subtotal,
         tax,
         total,
@@ -260,15 +264,19 @@ export default function CartPanel() {
           )}
         </h3>
 
-        {history.length > 0 && (
-          <div className="cart-tabs">
-            <button type="button" className={!showHistory ? "active" : ""} onClick={() => setShowHistory(false)}>Current bill</button>
-            <button type="button" className={showHistory ? "active" : ""} onClick={() => setShowHistory(true)}>Previous orders ({history.length})</button>
-          </div>
-        )}
+        <div className="cart-tabs">
+          <button type="button" className={!showHistory ? "active" : ""} onClick={() => setShowHistory(false)}>Current bill</button>
+          <button type="button" className={showHistory ? "active" : ""} onClick={() => setShowHistory(true)}>Previous orders{history.length ? ` (${history.length})` : ""}</button>
+        </div>
 
         {showHistory ? (
           <div className="order-history">
+            {history.length === 0 && (
+              <div style={{ textAlign: "center", color: "var(--muted)", padding: "44px 16px", fontSize: 15 }}>
+                <div style={{ fontSize: 30, marginBottom: 10 }}>🧾</div>
+                No previous orders yet.<br />Your past orders will show up here.
+              </div>
+            )}
             {history.map((h) => (
               <div key={h.id} className="hist-order">
                 <div className="hist-top">
@@ -303,6 +311,12 @@ export default function CartPanel() {
                         {item.options.map((o) => o.label).join(", ")}
                       </div>
                     )}
+                    {item.removed && item.removed.length > 0 && (
+                      <div className="cart-item-opts" style={{ color: "#fca5a5" }}>
+                        No {item.removed.map((r) => allergenLabel(r).toLowerCase()).join(", ")}
+                      </div>
+                    )}
+                    {item.note && <div className="cart-item-opts">“{item.note}”</div>}
                     {itemAllergens(item.id).length > 0 && (
                       <div className="cart-item-allergens">
                         {itemAllergens(item.id).map((a) => (

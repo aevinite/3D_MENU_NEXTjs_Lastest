@@ -80,6 +80,7 @@ export default function ViewerClient({ folder }: { folder: string }) {
             image: menuItem.image,
           },
           options: menuItem.options,
+          allergens: menuItem.allergens,
         },
       })
     );

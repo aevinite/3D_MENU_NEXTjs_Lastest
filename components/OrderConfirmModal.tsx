@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 import type { OptionGroup } from "@/lib/menu";
+import { allergenIcon, allergenLabel } from "@/lib/allergens";
 
 interface OrderItem {
   id: string;
@@ -14,6 +15,7 @@ interface OrderItem {
 interface ConfirmDetail {
   item: OrderItem;
   options?: OptionGroup[];
+  allergens?: string[];
 }
 
 export default function OrderConfirmModal() {
@@ -21,6 +23,9 @@ export default function OrderConfirmModal() {
   const [item, setItem] = useState<OrderItem | null>(null);
   const [groups, setGroups] = useState<OptionGroup[]>([]);
   const [selected, setSelected] = useState<Record<number, string[]>>({});
+  const [allergens, setAllergens] = useState<string[]>([]);
+  const [removed, setRemoved] = useState<string[]>([]);
+  const [note, setNote] = useState("");
   const [qty, setQty] = useState(1);
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +44,9 @@ export default function OrderConfirmModal() {
         init[i] = g.type === "single" && g.choices[0] ? [g.choices[0].label] : [];
       });
       setSelected(init);
+      setAllergens(Array.isArray(detail.allergens) ? detail.allergens : []);
+      setRemoved([]);
+      setNote("");
       setQty(1);
       setOpen(true);
     };
@@ -85,21 +93,34 @@ export default function OrderConfirmModal() {
     });
   };
 
+  const toggleRemove = (a: string) =>
+    setRemoved((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
+
   const confirm = () => {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const sig = JSON.stringify(chosen.map((c) => `${c.group}:${c.label}`));
-      let cart: { id: string; title: string; price: string; image: string; qty: number; options?: typeof chosen; sig?: string }[] = [];
+      const sig = JSON.stringify([
+        ...chosen.map((c) => `${c.group}:${c.label}`),
+        ...removed.map((r) => `no:${r}`),
+        note.trim() ? `note:${note.trim()}` : "",
+      ]);
+      let cart: { id: string; title: string; price: string; image: string; qty: number; options?: typeof chosen; removed?: string[]; note?: string; sig?: string }[] = [];
       const saved = localStorage.getItem("lfh_cart");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) cart = parsed;
       }
-      // Same dish + same options = one line; different options = a new line.
+      // Same dish + same options/allergy/note = one line; otherwise a new line.
       const existing = cart.find((it) => it.id === item.id && (it.sig || "[]") === sig);
       if (existing) existing.qty += qty;
-      else cart.push({ id: item.id, title: item.title, price: unit.toFixed(2), image: item.image, qty, options: chosen.length ? chosen : undefined, sig });
+      else cart.push({
+        id: item.id, title: item.title, price: unit.toFixed(2), image: item.image, qty,
+        options: chosen.length ? chosen : undefined,
+        removed: removed.length ? removed : undefined,
+        note: note.trim() || undefined,
+        sig,
+      });
 
       localStorage.setItem("lfh_cart", JSON.stringify(cart));
       window.dispatchEvent(new Event("lfh:cart-updated"));
@@ -145,6 +166,37 @@ export default function OrderConfirmModal() {
             </div>
           </div>
         ))}
+
+        {allergens.length > 0 && (
+          <div className="oc-group">
+            <div className="oc-group-name">Contains — tap to remove</div>
+            <div className="oc-choices">
+              {allergens.map((a) => {
+                const off = removed.includes(a);
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    className={`oc-allergen ${off ? "removed" : ""}`}
+                    onClick={() => toggleRemove(a)}
+                  >
+                    {allergenIcon(a)} {allergenLabel(a)}{off ? " — removed" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="oc-note-wrap">
+          <input
+            type="text"
+            className="oc-note"
+            placeholder="Anything else? (e.g. less ice, no sugar)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </div>
 
         <div className="order-confirm-qty">
           <button type="button" aria-label="Decrease quantity" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1}>−</button>

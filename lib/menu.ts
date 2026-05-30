@@ -103,7 +103,7 @@ function mapRow(row: any): MenuItem {
 // write-only for the public — only the owner (service role) can read orders back.
 export interface OrderInput {
   tableNumber: string;
-  items: { id: string; title: string; price: string; qty: number; options?: { group: string; label: string; price: number }[] }[];
+  items: { id: string; title: string; price: string; qty: number; options?: { group: string; label: string; price: number }[]; removed?: string[]; note?: string }[];
   subtotal: number;
   tax: number;
   total: number;

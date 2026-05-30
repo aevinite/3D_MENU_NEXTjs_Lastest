@@ -21,6 +21,7 @@ interface FoodItem {
   time?: string;
   tags?: string[];
   options?: OptionGroup[];
+  allergens?: string[];
 }
 
 const CART_KEY = "lfh_cart";
@@ -83,6 +84,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
       detail: {
         item: { id: item.id, title: item.title, price: item.price, image: item.image },
         options: item.options,
+        allergens: item.allergens,
       },
     }));
   };
@@ -106,7 +108,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
   };
 
   const soldOut = (item.tags || []).includes("sold-out");
-  const hasOptions = (item.options?.length ?? 0) > 0;
+  const hasOptions = (item.options?.length ?? 0) > 0 || (item.allergens?.length ?? 0) > 0;
 
   return (
     <Link href={`/item/${item.slug}${viewingCategory ? `?cat=${viewingCategory}` : ""}`} className="item-card-link">

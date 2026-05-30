@@ -319,6 +319,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
             image: item.image,
           },
           options: item.options,
+          allergens: item.allergens,
         },
       })
     );
