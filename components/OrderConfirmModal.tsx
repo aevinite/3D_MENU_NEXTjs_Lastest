@@ -16,6 +16,9 @@ interface ConfirmDetail {
   item: OrderItem;
   options?: OptionGroup[];
   allergens?: string[];
+  // When re-opening from the bill to edit an existing line:
+  editSig?: string;
+  preselect?: { options?: { group: string; label: string; price: number }[]; removed?: string[]; note?: string; qty?: number };
 }
 
 export default function OrderConfirmModal() {
@@ -25,8 +28,12 @@ export default function OrderConfirmModal() {
   const [selected, setSelected] = useState<Record<number, string[]>>({});
   const [allergens, setAllergens] = useState<string[]>([]);
   const [removed, setRemoved] = useState<string[]>([]);
+  const [otherOn, setOtherOn] = useState(false);
+  const [otherText, setOtherText] = useState("");
   const [note, setNote] = useState("");
+  const [applyAll, setApplyAll] = useState(false);
   const [qty, setQty] = useState(1);
+  const [editSig, setEditSig] = useState<string | null>(null);
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,18 +43,29 @@ export default function OrderConfirmModal() {
       const detail = (e as CustomEvent<ConfirmDetail>).detail;
       if (!detail?.item) return;
       const gs = Array.isArray(detail.options) ? detail.options : [];
+      const pre = detail.preselect;
       setItem(detail.item);
       setGroups(gs);
-      // single-choice groups default to their first option; multi start empty
+      // Pre-fill from an existing line when editing; else single groups default to first.
       const init: Record<number, string[]> = {};
       gs.forEach((g, i) => {
-        init[i] = g.type === "single" && g.choices[0] ? [g.choices[0].label] : [];
+        if (pre?.options) init[i] = pre.options.filter((o) => o.group === g.name).map((o) => o.label);
+        else init[i] = g.type === "single" && g.choices[0] ? [g.choices[0].label] : [];
       });
       setSelected(init);
-      setAllergens(Array.isArray(detail.allergens) ? detail.allergens : []);
-      setRemoved([]);
-      setNote("");
-      setQty(1);
+      const listed = Array.isArray(detail.allergens) ? detail.allergens : [];
+      setAllergens(listed);
+      // Split a saved line's "removed" back into listed allergens vs a free-text
+      // "other" allergy the guest typed (anything not in the dish's own list).
+      const preRemoved = pre?.removed || [];
+      const otherEntries = preRemoved.filter((r) => !listed.includes(r));
+      setRemoved(preRemoved.filter((r) => listed.includes(r)));
+      setOtherOn(otherEntries.length > 0);
+      setOtherText(otherEntries.join(", "));
+      setApplyAll(false);
+      setNote(pre?.note || "");
+      setQty(pre?.qty && pre.qty > 0 ? pre.qty : 1);
+      setEditSig(detail.editSig || null);
       setOpen(true);
     };
     const onClose = () => setOpen(false);
@@ -96,13 +114,18 @@ export default function OrderConfirmModal() {
   const toggleRemove = (a: string) =>
     setRemoved((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
 
+  // The dish's own avoided allergens PLUS any free-text "other" allergy the guest
+  // typed. This is the single list that flows to the cart line and the kitchen.
+  const otherTrimmed = otherOn ? otherText.trim() : "";
+  const finalRemoved = otherTrimmed ? [...removed, otherTrimmed] : removed;
+
   const confirm = () => {
     if (submitting) return;
     setSubmitting(true);
     try {
       const sig = JSON.stringify([
         ...chosen.map((c) => `${c.group}:${c.label}`),
-        ...removed.map((r) => `no:${r}`),
+        ...finalRemoved.map((r) => `no:${r}`),
         note.trim() ? `note:${note.trim()}` : "",
       ]);
       let cart: { id: string; title: string; price: string; image: string; qty: number; options?: typeof chosen; removed?: string[]; note?: string; sig?: string }[] = [];
@@ -111,20 +134,26 @@ export default function OrderConfirmModal() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) cart = parsed;
       }
+      // Editing from the bill: drop the line being edited first.
+      if (editSig) cart = cart.filter((it) => (it.sig || "[]") !== editSig);
       // Same dish + same options/allergy/note = one line; otherwise a new line.
       const existing = cart.find((it) => it.id === item.id && (it.sig || "[]") === sig);
       if (existing) existing.qty += qty;
       else cart.push({
         id: item.id, title: item.title, price: unit.toFixed(2), image: item.image, qty,
         options: chosen.length ? chosen : undefined,
-        removed: removed.length ? removed : undefined,
+        removed: finalRemoved.length ? finalRemoved : undefined,
         note: note.trim() || undefined,
         sig,
       });
 
       localStorage.setItem("lfh_cart", JSON.stringify(cart));
       window.dispatchEvent(new Event("lfh:cart-updated"));
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: `${qty} × ${item.title} added` } }));
+      // "Apply to all" — push the avoided allergens into the order-wide avoid list.
+      if (applyAll && finalRemoved.length) {
+        window.dispatchEvent(new CustomEvent("lfh:avoid-all", { detail: { allergens: finalRemoved } }));
+      }
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: editSig ? `${item.title} updated` : `${qty} × ${item.title} added` } }));
       setOpen(false);
     } catch (e) {
       console.error("Failed to add to cart", e);
@@ -184,7 +213,29 @@ export default function OrderConfirmModal() {
                   </button>
                 );
               })}
+              <button
+                type="button"
+                className={`oc-allergen oc-other ${otherOn ? "on" : ""}`}
+                onClick={() => setOtherOn((v) => !v)}
+              >
+                ➕ Other allergy
+              </button>
             </div>
+            {otherOn && (
+              <input
+                type="text"
+                className="oc-other-input"
+                placeholder="Describe it (e.g. peanuts, shellfish)"
+                value={otherText}
+                onChange={(e) => setOtherText(e.target.value)}
+              />
+            )}
+            {finalRemoved.length > 0 && (
+              <label className="oc-applyall">
+                <input type="checkbox" checked={applyAll} onChange={(e) => setApplyAll(e.target.checked)} />
+                Avoid {finalRemoved.map((r) => allergenLabel(r).toLowerCase()).join(", ")} in all my dishes
+              </label>
+            )}
           </div>
         )}
 
@@ -212,7 +263,7 @@ export default function OrderConfirmModal() {
         <div className="order-confirm-actions">
           <button type="button" className="order-confirm-cancel" onClick={() => setOpen(false)}>Cancel</button>
           <button type="button" className="order-confirm-add" onClick={confirm} disabled={submitting}>
-            {submitting ? "Adding…" : "Add to Order"}
+            {submitting ? "Saving…" : editSig ? "Update Order" : "Add to Order"}
           </button>
         </div>
       </div>

@@ -108,7 +108,10 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
   };
 
   const soldOut = (item.tags || []).includes("sold-out");
-  const hasOptions = (item.options?.length ?? 0) > 0 || (item.allergens?.length ?? 0) > 0;
+  // Only dishes with real customization groups open the popup; everything else
+  // keeps the quick "+". Allergens alone no longer force the customize button —
+  // the allergy row lives INSIDE the popup, so it only shows for option dishes.
+  const hasOptions = (item.options?.length ?? 0) > 0;
 
   return (
     <Link href={`/item/${item.slug}${viewingCategory ? `?cat=${viewingCategory}` : ""}`} className="item-card-link">

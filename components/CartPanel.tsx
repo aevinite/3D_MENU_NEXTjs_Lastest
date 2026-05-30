@@ -117,21 +117,37 @@ export default function CartPanel() {
       } catch { setHistory([]); }
     };
     loadHistory();
+    // restore order-wide allergy avoidances (set via "apply to all" or the bill section)
+    try {
+      const d = JSON.parse(localStorage.getItem("lfh_declared") || "[]");
+      if (Array.isArray(d) && d.length) setDeclared(d);
+    } catch {}
     const handleOpen = () => { setOpen(true); loadCart(); loadHistory(); setShowHistory(false); };
     const handleClose = () => setOpen(false);
     const handleCartUpdated = loadCart;
     const handleCurrency = () => setCurrencyState(getCurrency());
+    const handleAvoidAll = (e: Event) => {
+      const list = (e as CustomEvent<{ allergens: string[] }>).detail?.allergens || [];
+      setDeclared((d) => Array.from(new Set([...d, ...list])));
+    };
     window.addEventListener("lfh:open-cart", handleOpen);
     window.addEventListener("lfh:close-all", handleClose);
     window.addEventListener("lfh:cart-updated", handleCartUpdated);
     window.addEventListener("lfh:currency-changed", handleCurrency);
+    window.addEventListener("lfh:avoid-all", handleAvoidAll);
     return () => {
+      window.removeEventListener("lfh:avoid-all", handleAvoidAll);
       window.removeEventListener("lfh:open-cart", handleOpen);
       window.removeEventListener("lfh:close-all", handleClose);
       window.removeEventListener("lfh:cart-updated", handleCartUpdated);
       window.removeEventListener("lfh:currency-changed", handleCurrency);
     };
   }, []);
+
+  // Persist the order-wide allergy avoidances.
+  useEffect(() => {
+    try { localStorage.setItem("lfh_declared", JSON.stringify(declared)); } catch {}
+  }, [declared]);
 
   const showPrice = (n: number) => (currency ? formatPrice(n, currency) : `$${n.toFixed(2)}`);
   const subtotal = cart.reduce((sum, it) => sum + parseFloat(it.price) * it.qty, 0);
@@ -144,6 +160,25 @@ export default function CartPanel() {
   const orderDeclaredHits = [...new Set(cart.flatMap((it) => conflicts(it.id)))];
   const toggleDeclared = (slug: string) =>
     setDeclared((d) => (d.includes(slug) ? d.filter((x) => x !== slug) : [...d, slug]));
+
+  // Re-open the customize popup for an existing line, pre-filled, to edit it.
+  const editLine = (it: CartItem) => {
+    const dish = menuItems.find((m) => m.id === it.id);
+    if (!dish) return;
+    window.dispatchEvent(new CustomEvent("lfh:open-order-confirm", {
+      detail: {
+        item: { id: dish.id, title: dish.title, price: dish.price, image: dish.image },
+        options: dish.options,
+        allergens: dish.allergens,
+        editSig: it.sig || "[]",
+        preselect: { options: it.options, removed: it.removed, note: it.note, qty: it.qty },
+      },
+    }));
+  };
+  const isCustomizable = (id: string) => {
+    const d = menuItems.find((m) => m.id === id);
+    return !!d && (((d.options || []).length > 0) || ((d.allergens || []).length > 0));
+  };
 
   // Gentle pairing upsell: the top-rated drink/dessert not already on the bill.
   const cartIds = new Set(cart.map((c) => c.id));
@@ -339,6 +374,11 @@ export default function CartPanel() {
                       <button type="button" aria-label={`Decrease ${item.title}`} onClick={() => decrement(idx)} style={qtyBtn}>−</button>
                       <span style={{ minWidth: "32px", textAlign: "center", fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>{item.qty}x</span>
                       <button type="button" aria-label={`Increase ${item.title}`} onClick={() => increment(idx)} style={qtyBtn}>+</button>
+                      {isCustomizable(item.id) && (
+                        <button type="button" className="cart-edit-btn" onClick={() => editLine(item)}>
+                          <i className="fas fa-pen"></i> Edit
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
