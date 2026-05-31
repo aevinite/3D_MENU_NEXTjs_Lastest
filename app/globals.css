@@ -950,9 +950,11 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 }
 
 /* --- CART STYLES --- */
-/* No separate inner scroller — the whole bill panel scrolls as ONE, so the
-   item list flows straight into the total + Place Order (no double scrollbars). */
-.cart-list { margin-bottom: 24px; }
+/* The item list keeps its OWN scrollbar; when you scroll it to the end, the
+   scroll CHAINS to the whole panel so you keep going down to the total +
+   Place Order. Two scrollbars that sync. overscroll-behavior stays `auto`
+   (NOT `contain`) — that's what lets the inner→panel chaining happen. */
+.cart-list { max-height: 50vh; overflow-y: auto; overscroll-behavior: auto; margin-bottom: 24px; padding-right: 8px; }
 .cart-item { 
   display: flex; justify-content: space-between; align-items: center; padding: 14px 0; 
   border-bottom: 1px solid rgba(212,165,116,0.2);
