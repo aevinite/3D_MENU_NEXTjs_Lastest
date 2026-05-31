@@ -25,10 +25,6 @@ class ModelWatchlist {
     }
     return null;
   }
-
-  has(folder: string): boolean {
-    return this.byFolder.has(folder);
-  }
 }
 
 declare global {

@@ -233,15 +233,6 @@ export default function ViewerClient({ folder }: { folder: string }) {
     return () => clearTimeout(t);
   }, [loading, error]);
 
-  const parseTagPos = (ing: any) => {
-    if (ing._tx !== undefined) return { x: ing._tx, y: ing._ty, z: ing._tz };
-    if (ing.tagPosition) {
-      const p = ing.tagPosition.split(" ").map(Number);
-      return { x: p[0] || 0, y: p[1] || 0, z: p[2] || 0 };
-    }
-    return { x: ing.x + 0.5, y: ing.y + 0.5, z: ing.z };
-  };
-
   const _updateLine = (ing: any) => {
     const line = document.getElementById(`hs-line-${ing.id}`) as SVGLineElement | null;
     const anchorBtn = document.getElementById(`hs-${ing.id}`);

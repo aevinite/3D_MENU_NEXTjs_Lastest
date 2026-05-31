@@ -8,8 +8,8 @@ memory for tone and preferences.
 ## Stack at a glance
 
 - Next 16.2.6, App Router, async `params`. React 19.2.4. TS strict.
-- Tailwind 4 (postcss). GSAP (npm + CDN — duplication is a known bug).
-- `<model-viewer>` web component loaded from CDN in `app/layout.tsx`.
+- Tailwind 4 (postcss). GSAP (npm-only, imported in `HeroTitle.tsx` + `IntroSplash.tsx` — the old "npm + CDN duplication" bug is gone; there is no GSAP CDN tag).
+- `<model-viewer>` web component loaded via `<Script>` from CDN inside `components/PublicModelViewer.tsx` (NOT in `app/layout.tsx`).
 - GLB models on Supabase Storage; two tiers per dish (small ~2 MB, optimized ~9 MB).
 - Dev: `npm run dev` (port 3003). Playwright: `node scripts/verify-cache.mjs`.
 
@@ -54,7 +54,7 @@ memory for tone and preferences.
 - `/menu` — menu with 3D preload (`app/menu/page.tsx`).
 - `/item/[slug]` — dish detail.
 - `/view/[folder]` — 3D viewer.
-- `/3d/[folder]` — broken stub (old sync `params` API). Likely safe to delete.
+  (The old `/3d/[folder]` stub has been deleted — only these four routes exist.)
 
 ## Skills and tools to reach for
 
@@ -84,10 +84,11 @@ via `ToolSearch` BEFORE planning around it.
 - **Supabase HEAD lies about Cache-Control.** Use GET with `Range: bytes=0-0`
   for header checks. `scripts/set-glb-cache.mjs` has this bug.
 - **`/` is now just a redirect to `/menu`** (not a duplicate). No mirroring needed.
-- **`Header.tsx` force-resets theme to dark on mount.** Light-mode CSS is
-  currently unreachable from the UI.
+- **Light mode works and persists** (`lfh_theme`). The old "Header forces dark /
+  light unreachable" note is stale — the theme toggle is live.
 - **Don't re-suggest Draco compression.** Already done. See model-pipeline memory.
-- **GSAP appears twice in the page** — once npm-imported, once CDN-loaded. Pick one.
+- **Editor runs on port 3004** (`editor/server.js` default; override with `PORT`).
+  Older docs/commits said 3005 — 3004 is what the code actually binds.
 - **Service-role Supabase keys must never be committed or echoed.** If the user
   pastes one in chat, warn them loudly and treat it as compromised.
 - **MCP servers are NOT read from `.claude/settings.json`.** Claude Code loads

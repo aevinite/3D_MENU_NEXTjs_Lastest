@@ -1,16 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { callWaiter } from "@/lib/menu";
+import { callWaiter, getSettings } from "@/lib/menu";
+import { validateTable, flagTableInput } from "@/lib/table";
 
 export default function ChefPopup() {
   const [open, setOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState("");
+  const [tableCount, setTableCount] = useState(0); // how many tables exist; 0 = no limit known
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
+
+    // How many tables exist, so we can reject an out-of-range table number.
+    getSettings()
+      .then((s) => setTableCount(s.tableCount))
+      .catch(() => {});
 
     window.addEventListener("lfh:chef-call", handleOpen);
     window.addEventListener("lfh:close-all", handleClose);
@@ -32,17 +39,15 @@ export default function ChefPopup() {
 
   const handleSend = async (reason: string) => {
     if (sending) return;
-    if (!tableNumber.trim()) {
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Please enter your table number first." } }));
-      const el = document.getElementById("chef-table") as HTMLInputElement | null;
-      el?.focus();
-      el?.classList.add("table-input-error");
-      setTimeout(() => el?.classList.remove("table-input-error"), 1500);
+    // Table number is required AND must be a real table (see lib/table.ts).
+    const check = validateTable(tableNumber, tableCount);
+    if (!check.ok) {
+      flagTableInput("chef-table", check.message!);
       return;
     }
     setSending(true);
     try {
-      await callWaiter(tableNumber.trim(), reason);
+      await callWaiter(check.value, reason);
       window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: `Sent: ${reason} — someone's on the way! 👨‍🍳` } }));
       window.dispatchEvent(new Event("lfh:close-all"));
       setTableNumber("");
@@ -74,7 +79,9 @@ export default function ChefPopup() {
           className="table-input"
           placeholder="Table No."
           value={tableNumber}
-          onChange={(e) => setTableNumber(e.target.value)}
+          maxLength={4}
+          // Keep only digits so letters/symbols can never reach the field.
+          onChange={(e) => setTableNumber(e.target.value.replace(/\D/g, ""))}
         />
         <div className="chef-reasons">
           {REASONS.map((r) => (

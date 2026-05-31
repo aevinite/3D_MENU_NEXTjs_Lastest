@@ -123,10 +123,14 @@ export default function OrderConfirmModal() {
     if (submitting) return;
     setSubmitting(true);
     try {
+      // Fingerprint of this line's spec. An EMPTY spec (no options, no removed
+      // allergens, no note) yields "[]" — the same as a quick "+" add — so the
+      // plain/non-allergic version always merges regardless of how it was added,
+      // while any removed allergen (e.g. "no:milk") makes it a separate line.
       const sig = JSON.stringify([
         ...chosen.map((c) => `${c.group}:${c.label}`),
         ...finalRemoved.map((r) => `no:${r}`),
-        note.trim() ? `note:${note.trim()}` : "",
+        ...(note.trim() ? [`note:${note.trim()}`] : []),
       ]);
       let cart: { id: string; title: string; price: string; image: string; qty: number; options?: typeof chosen; removed?: string[]; note?: string; sig?: string }[] = [];
       const saved = localStorage.getItem("lfh_cart");

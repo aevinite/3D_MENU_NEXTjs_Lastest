@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
-import { getMenuItems, createOrder, type MenuItem } from "@/lib/menu";
+import { getMenuItems, getSettings, createOrder, type MenuItem } from "@/lib/menu";
 import { ALLERGENS, allergenIcon, allergenLabel } from "@/lib/allergens";
+import { validateTable, flagTableInput } from "@/lib/table";
+import {
+  STEPS,
+  STATUS_COPY,
+  type ActiveOrder,
+  readActiveOrders,
+  liveActiveOrders,
+} from "@/lib/orderStatus";
 
 interface CartOption { group: string; label: string; price: number }
 interface CartItem {
@@ -51,15 +59,18 @@ export default function CartPanel() {
   const [open, setOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [tableNumber, setTableNumber] = useState("");
+  const [tableCount, setTableCount] = useState(0); // how many tables exist; 0 = no limit known
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const [allergenMap, setAllergenMap] = useState<Record<string, string[]>>({});
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [history, setHistory] = useState<HistoryOrder[]>([]);
+  const [liveOrders, setLiveOrders] = useState<ActiveOrder[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [declared, setDeclared] = useState<string[]>([]); // allergens the diner avoids
   const [otherAllergy, setOtherAllergy] = useState(""); // free-text allergy not in the list
   const [otherOpen, setOtherOpen] = useState(false); // reveal the free-text field
   const [placing, setPlacing] = useState(false);
+  const declaredHydrated = useRef(false); // skip the first persist so restore can't be clobbered
 
   const loadCart = () => {
     try {
@@ -108,6 +119,10 @@ export default function CartPanel() {
         setMenuItems(items);
       })
       .catch(() => {});
+    // How many tables exist, so we can reject an out-of-range table number.
+    getSettings()
+      .then((s) => setTableCount(s.tableCount))
+      .catch(() => {});
 
     const loadHistory = () => {
       try {
@@ -116,16 +131,21 @@ export default function CartPanel() {
         setHistory(Array.isArray(p) ? p : []);
       } catch { setHistory([]); }
     };
+    // Live orders are written/polled by OrderTracker; we just read them here.
+    const loadLive = () => setLiveOrders(liveActiveOrders(readActiveOrders()));
     loadHistory();
+    loadLive();
     // restore order-wide allergy avoidances (set via "apply to all" or the bill section)
     try {
       const d = JSON.parse(localStorage.getItem("lfh_declared") || "[]");
       if (Array.isArray(d) && d.length) setDeclared(d);
     } catch {}
-    const handleOpen = () => { setOpen(true); loadCart(); loadHistory(); setShowHistory(false); };
+    const handleOpen = () => { setOpen(true); loadCart(); loadHistory(); loadLive(); setShowHistory(false); };
     const handleClose = () => setOpen(false);
     const handleCartUpdated = loadCart;
     const handleCurrency = () => setCurrencyState(getCurrency());
+    // Re-read live orders whenever one is placed or its status changes.
+    const handleOrdersChanged = () => { loadLive(); loadHistory(); };
     const handleAvoidAll = (e: Event) => {
       const list = (e as CustomEvent<{ allergens: string[] }>).detail?.allergens || [];
       setDeclared((d) => Array.from(new Set([...d, ...list])));
@@ -135,21 +155,45 @@ export default function CartPanel() {
     window.addEventListener("lfh:cart-updated", handleCartUpdated);
     window.addEventListener("lfh:currency-changed", handleCurrency);
     window.addEventListener("lfh:avoid-all", handleAvoidAll);
+    window.addEventListener("lfh:order-placed", handleOrdersChanged);
+    window.addEventListener("lfh:orders-updated", handleOrdersChanged);
+    window.addEventListener("storage", handleOrdersChanged);
     return () => {
       window.removeEventListener("lfh:avoid-all", handleAvoidAll);
       window.removeEventListener("lfh:open-cart", handleOpen);
       window.removeEventListener("lfh:close-all", handleClose);
       window.removeEventListener("lfh:cart-updated", handleCartUpdated);
       window.removeEventListener("lfh:currency-changed", handleCurrency);
+      window.removeEventListener("lfh:order-placed", handleOrdersChanged);
+      window.removeEventListener("lfh:orders-updated", handleOrdersChanged);
+      window.removeEventListener("storage", handleOrdersChanged);
     };
   }, []);
 
-  // Persist the order-wide allergy avoidances.
+  // Persist the order-wide allergy avoidances. Skip the very first run: on mount
+  // `declared` is still the empty default while the restore (above) is being
+  // applied, so writing here would overwrite the saved list with [].
   useEffect(() => {
+    if (!declaredHydrated.current) { declaredHydrated.current = true; return; }
     try { localStorage.setItem("lfh_declared", JSON.stringify(declared)); } catch {}
   }, [declared]);
 
+  // While the cart is open, re-evaluate live orders every few seconds so a
+  // "Served!" card drops off after its one-minute linger — that expiry is
+  // time-based, so no event fires for it.
+  useEffect(() => {
+    if (!open) return;
+    const refreshLive = () => setLiveOrders(liveActiveOrders(readActiveOrders()));
+    refreshLive();
+    const iv = setInterval(refreshLive, 5000);
+    return () => clearInterval(iv);
+  }, [open]);
+
   const showPrice = (n: number) => (currency ? formatPrice(n, currency) : `$${n.toFixed(2)}`);
+  // Orders shown live up top are hidden from the history list below, so the
+  // same order never appears twice in the same tab.
+  const liveIds = new Set(liveOrders.map((o) => o.id));
+  const pastOrders = history.filter((h) => !liveIds.has(h.id));
   const subtotal = cart.reduce((sum, it) => sum + parseFloat(it.price) * it.qty, 0);
   const itemCount = cart.reduce((sum, it) => sum + it.qty, 0);
   const tax = subtotal * TAX_RATE;
@@ -200,22 +244,18 @@ export default function CartPanel() {
 
   const placeOrder = async () => {
     if (cart.length === 0 || placing) return;
-    // Table number is required — the kitchen needs to know where to serve.
-    if (!tableNumber.trim()) {
-      window.dispatchEvent(
-        new CustomEvent("lfh:toast", { detail: { message: "Please enter your table number first." } })
-      );
-      const input = document.getElementById("cart-table") as HTMLInputElement | null;
-      input?.focus();
-      input?.classList.add("table-input-error");
-      setTimeout(() => input?.classList.remove("table-input-error"), 1500);
+    // Table number is required AND must be a real table (see lib/table.ts).
+    const check = validateTable(tableNumber, tableCount);
+    if (!check.ok) {
+      flagTableInput("cart-table", check.message!);
       return;
     }
+    const tableTrim = check.value;
     setPlacing(true);
     try {
       const allergies = [...declared, ...(otherAllergy.trim() ? [otherAllergy.trim()] : [])];
       const orderId = await createOrder({
-        tableNumber,
+        tableNumber: tableTrim,
         items: cart.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty, options: it.options, removed: it.removed, note: it.note })),
         subtotal,
         tax,
@@ -229,7 +269,7 @@ export default function CartPanel() {
         const active = Array.isArray(list) ? list : [];
         active.push({
           id: orderId,
-          tableNumber: tableNumber.trim(),
+          tableNumber: tableTrim,
           total,
           itemCount,
           items: cart.map((it) => ({ title: it.title, qty: it.qty })),
@@ -245,7 +285,7 @@ export default function CartPanel() {
         const hist = (() => { const p = rawH ? JSON.parse(rawH) : []; return Array.isArray(p) ? p : []; })();
         hist.unshift({
           id: orderId,
-          tableNumber: tableNumber.trim(),
+          tableNumber: tableTrim,
           total,
           items: cart.map((it) => ({ title: it.title, qty: it.qty, price: it.price })),
           placedAt: Date.now(),
@@ -254,7 +294,7 @@ export default function CartPanel() {
         localStorage.setItem("lfh_order_history", JSON.stringify(hist.slice(0, 50)));
         setHistory(hist.slice(0, 50));
       } catch {}
-      const msg = tableNumber.trim() ? `Order placed for table ${tableNumber.trim()}! 🎉` : "Order placed! 🎉";
+      const msg = tableTrim ? `Order placed for table ${tableTrim}! 🎉` : "Order placed! 🎉";
       window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: msg } }));
       setCart([]); saveCart([]); setTableNumber(""); setDeclared([]); setOtherAllergy(""); setOtherOpen(false);
       window.dispatchEvent(new Event("lfh:cart-updated"));
@@ -301,31 +341,78 @@ export default function CartPanel() {
 
         <div className="cart-tabs">
           <button type="button" className={!showHistory ? "active" : ""} onClick={() => setShowHistory(false)}>Current bill</button>
-          <button type="button" className={showHistory ? "active" : ""} onClick={() => setShowHistory(true)}>Previous orders{history.length ? ` (${history.length})` : ""}</button>
+          <button type="button" className={showHistory ? "active" : ""} onClick={() => setShowHistory(true)}>Previous orders{liveOrders.length + pastOrders.length ? ` (${liveOrders.length + pastOrders.length})` : ""}</button>
         </div>
 
         {showHistory ? (
           <div className="order-history">
-            {history.length === 0 && (
+            {liveOrders.length > 0 && (
+              <div className="live-orders">
+                <div className="live-orders-head">
+                  <span className="live-dot" aria-hidden="true"></span>
+                  Live now
+                  <span className="live-count">{liveOrders.length}</span>
+                </div>
+                {liveOrders.map((o) => {
+                  const cp = STATUS_COPY[o.status];
+                  const stepIndex = STEPS.indexOf(o.status);
+                  return (
+                    <div key={o.id} className={`live-order status-${o.status}`}>
+                      <div className="live-order-top">
+                        <div className="ot-icon" aria-hidden="true">
+                          <i className={`fas ${cp.icon}`}></i>
+                        </div>
+                        <div className="live-order-info">
+                          <div className="live-order-label">{cp.label}</div>
+                          <div className="live-order-sub">{cp.sub}</div>
+                        </div>
+                        {o.tableNumber && <span className="live-order-table">Table {o.tableNumber}</span>}
+                      </div>
+                      {stepIndex >= 0 && (
+                        <div className="ot-steps" aria-hidden="true">
+                          {STEPS.map((s, i) => (
+                            <span key={s} className={`ot-step ${i <= stepIndex ? "done" : ""} ${i === stepIndex ? "active" : ""}`} />
+                          ))}
+                        </div>
+                      )}
+                      {o.items && o.items.length > 0 && (
+                        <div className="live-order-items">
+                          {o.items.map((it) => `${it.title} ×${it.qty}`).join(", ")}
+                        </div>
+                      )}
+                      <div className="live-order-total"><span>Total</span><span>{showPrice(o.total)}</span></div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {pastOrders.length === 0 && liveOrders.length === 0 && (
               <div style={{ textAlign: "center", color: "var(--muted)", padding: "44px 16px", fontSize: 15 }}>
                 <div style={{ fontSize: 30, marginBottom: 10 }}>🧾</div>
                 No previous orders yet.<br />Your past orders will show up here.
               </div>
             )}
-            {history.map((h) => (
-              <div key={h.id} className="hist-order">
-                <div className="hist-top">
-                  <span className="hist-table">{h.tableNumber ? `Table ${h.tableNumber}` : "Order"}</span>
-                  <span className="hist-when">{new Date(h.placedAt).toLocaleString()}</span>
-                </div>
-                <div className="hist-items">
-                  {h.items.map((it, i) => (
-                    <span key={i}>{it.title} ×{it.qty}{i < h.items.length - 1 ? ", " : ""}</span>
-                  ))}
-                </div>
-                <div className="hist-total"><span>Total</span><span>{showPrice(h.total)}</span></div>
-              </div>
-            ))}
+
+            {pastOrders.length > 0 && (
+              <>
+                {liveOrders.length > 0 && <div className="hist-earlier-head">Earlier orders</div>}
+                {pastOrders.map((h) => (
+                  <div key={h.id} className="hist-order">
+                    <div className="hist-top">
+                      <span className="hist-table">{h.tableNumber ? `Table ${h.tableNumber}` : "Order"}</span>
+                      <span className="hist-when">{new Date(h.placedAt).toLocaleString()}</span>
+                    </div>
+                    <div className="hist-items">
+                      {h.items.map((it, i) => (
+                        <span key={i}>{it.title} ×{it.qty}{i < h.items.length - 1 ? ", " : ""}</span>
+                      ))}
+                    </div>
+                    <div className="hist-total"><span>Total</span><span>{showPrice(h.total)}</span></div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         ) : (
         <>
@@ -458,7 +545,9 @@ export default function CartPanel() {
               type="text" inputMode="numeric" pattern="[0-9]*"
               id="cart-table" className="table-input" placeholder="Enter Table Number (required)"
               aria-label="Table number" value={tableNumber}
-              onChange={(e) => setTableNumber(e.target.value)}
+              maxLength={4}
+              // Keep only digits so letters/symbols can never reach the field.
+              onChange={(e) => setTableNumber(e.target.value.replace(/\D/g, ""))}
             />
 
             <div className="bill-rows">

@@ -211,6 +211,57 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 .hist-when { font-size: 11px; color: var(--muted); }
 .hist-items { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
 .hist-total { display: flex; justify-content: space-between; font-weight: 700; color: var(--text); border-top: 1px solid var(--border-color, rgba(212,165,116,0.15)); padding-top: 8px; }
+
+/* "Live now" section at the top of the Previous-orders tab — shows every order
+   this device is still following, so 2+ simultaneous orders are each tracked. */
+.live-orders { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.live-orders-head {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text);
+}
+.live-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: #4ade80;
+  box-shadow: 0 0 0 0 rgba(74,222,128,0.6); animation: livePulse 1.6s ease-out infinite;
+}
+@keyframes livePulse {
+  0% { box-shadow: 0 0 0 0 rgba(74,222,128,0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(74,222,128,0); }
+  100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+}
+.live-count {
+  margin-left: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--accent, #d4a574) 22%, transparent);
+  color: var(--text); font-size: 11px; font-weight: 700;
+}
+.live-order {
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 42%, transparent);
+  border-radius: 14px; padding: 14px;
+  background: color-mix(in srgb, var(--ot-accent) 7%, transparent);
+  --ot-accent: #d4a574; /* "received" gold by default */
+}
+.live-order.status-preparing { --ot-accent: #4f9dff; }
+.live-order.status-served { --ot-accent: #4ade80; }
+.live-order.status-cancelled { --ot-accent: #ef4444; }
+.live-order .ot-icon { width: 36px; height: 36px; font-size: 15px; }
+.live-order.status-preparing .ot-icon { animation: otPulse 1.5s ease-in-out infinite; }
+.live-order-top { display: flex; align-items: center; gap: 11px; }
+.live-order-info { flex: 1; min-width: 0; }
+.live-order-label { font-weight: 700; font-size: 14px; color: var(--text); }
+.live-order-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.live-order-table { font-size: 11px; color: var(--muted); white-space: nowrap; align-self: flex-start; }
+.live-order .ot-steps { margin-top: 11px; }
+.live-order-items { font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: 10px; }
+.live-order-total {
+  display: flex; justify-content: space-between; font-weight: 700; color: var(--text);
+  border-top: 1px solid color-mix(in srgb, var(--ot-accent) 22%, transparent);
+  padding-top: 8px; margin-top: 10px;
+}
+.hist-earlier-head {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
 @keyframes tableShake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
 
 /* --- TOAST --- */

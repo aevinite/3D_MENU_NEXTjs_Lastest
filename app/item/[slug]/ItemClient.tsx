@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import StarRating from "@/components/StarRating";
@@ -257,11 +257,6 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
     if (urls.length) modelLoader.prioritize(urls);
   }, [item, allItems, fromCat]);
 
-  const getReviewCount = () => {
-    if (!item) return 12;
-    return localReviews.length;
-  };
-
   const getRelatedItems = (): FoodItem[] => {
     if (!item || !allItems.length) return [];
     const TOTAL = 10;
@@ -342,6 +337,11 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
     window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Review submitted!" } }));
   };
 
+  // Pick + shuffle once per dish/data change. Computing this during render
+  // re-ran Math.random() on every keystroke/toggle, reshuffling the row each time.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const relatedItems = useMemo(() => getRelatedItems(), [item, allItems]);
+
   if (loading) {
     return (
       <div id="detail-page" className="page active item-detail-page flex items-center justify-center min-h-screen">
@@ -367,7 +367,6 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
     ? localReviews.reduce((sum, r) => sum + r.rating, 0) / localReviews.length
     : parseFloat(item.rating);
   const reviewCount = localReviews.length;
-  const relatedItems = getRelatedItems();
 
   return (
     <div id="detail-page" className="page active item-detail-page">

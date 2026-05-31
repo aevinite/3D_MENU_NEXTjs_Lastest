@@ -18,11 +18,6 @@ class ModelLoader {
     return this.loaded.has(url);
   }
 
-  hasFailed(url: string | null | undefined): boolean {
-    if (!url) return false;
-    return this.failed.has(url);
-  }
-
   getCachedUrl(url: string | null | undefined): string | null {
     if (!url) return null;
     return this.loaded.get(url) ?? null;

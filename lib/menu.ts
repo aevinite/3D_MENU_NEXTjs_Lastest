@@ -210,6 +210,7 @@ export async function getCategories(): Promise<Category[]> {
 export interface Settings {
   bubblesEnabled: boolean;
   serviceMode: boolean;
+  tableCount: number; // how many tables exist; 0 = unknown (don't enforce an upper bound)
 }
 export async function getSettings(): Promise<Settings> {
   const { data, error } = await supabase
@@ -221,6 +222,9 @@ export async function getSettings(): Promise<Settings> {
   return {
     bubblesEnabled: data ? data.bubbles_enabled !== false : true,
     serviceMode: data ? data.service_mode === true : false,
+    // Number(...) || 0 so a missing/NaN value disables the upper-bound check
+    // rather than blocking every order.
+    tableCount: data ? Number(data.table_count) || 0 : 0,
   };
 }
 

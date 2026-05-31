@@ -26,7 +26,13 @@ interface FoodItem {
 
 const CART_KEY = "lfh_cart";
 
-interface CartItem { id: string; title: string; price: string; image: string; qty: number; }
+interface CartItem { id: string; title: string; price: string; image: string; qty: number; sig?: string; }
+
+// The menu card's "+" only ever adds/controls the PLAIN version of a dish
+// (no options, no removed allergens, no note). The customize popup tags those
+// lines with sig "[]"; quick-adds historically had no sig. Match either so the
+// card never accidentally bumps a customized line that shares the same id.
+const isPlainLine = (i: CartItem) => !i.sig || i.sig === "[]";
 
 const readCart = (): CartItem[] => {
   try {
@@ -58,7 +64,7 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
   };
 
   const syncQty = () => {
-    const found = readCart().find(i => i.id === item.id);
+    const found = readCart().find(i => i.id === item.id && isPlainLine(i));
     setCartQty(found?.qty ?? 0);
   };
 
@@ -94,23 +100,24 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
     e.stopPropagation();
     if (delta > 0) popThumb();
     const cart = readCart();
-    const idx = cart.findIndex(i => i.id === item.id);
+    const idx = cart.findIndex(i => i.id === item.id && isPlainLine(i));
     const newQty = (idx >= 0 ? cart[idx].qty : 0) + delta;
     if (newQty <= 0) {
-      writeCart(cart.filter(i => i.id !== item.id));
+      writeCart(cart.filter((i, k) => k !== idx));
     } else if (idx >= 0) {
       cart[idx].qty = newQty;
       writeCart(cart);
     } else {
-      writeCart([...cart, { id: item.id, title: item.title, price: item.price, image: item.image, qty: newQty }]);
+      writeCart([...cart, { id: item.id, title: item.title, price: item.price, image: item.image, qty: newQty, sig: "[]" }]);
     }
     setCartQty(Math.max(0, newQty));
   };
 
   const soldOut = (item.tags || []).includes("sold-out");
-  // Only dishes with real customization groups open the popup; everything else
-  // keeps the quick "+". Allergens alone no longer force the customize button —
-  // the allergy row lives INSIDE the popup, so it only shows for option dishes.
+  // Menu cards stay FAST: dishes with real option groups (size/extras you must
+  // pick) open the Customize popup; everything else keeps the quick "+", which
+  // adds the plain/non-allergic version. Allergy choices live on the dish's
+  // detail page ("Add to Cart" there opens the popup), not on the menu cards.
   const hasOptions = (item.options?.length ?? 0) > 0;
 
   return (

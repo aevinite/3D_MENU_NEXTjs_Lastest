@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import Script from "next/script";
 
 interface PublicConfig {
@@ -31,8 +31,6 @@ export default function PublicModelViewer({
   config: PublicConfig;
   mvRef: React.RefObject<any>;
 }) {
-  const lineRefs = useRef<Map<string, SVGLineElement>>(new Map());
-
   if (!config.modelUrl || config.modelUrl === "SUPABASE_GLB_URL_HERE") {
     return (
       <div className="flex items-center justify-center h-full text-center p-8">
@@ -66,7 +64,10 @@ export default function PublicModelViewer({
           "ar-modes": "webxr scene-viewer quick-look",
           "ar-placement": "floor",
           "camera-controls": true,
-          "touch-action": "pan-y",
+          // "none" lets the viewer own BOTH drag axes from the first touch.
+          // With "pan-y" the browser kept vertical gestures for page-scroll, so
+          // you had to drag horizontally first before vertical orbit responded.
+          "touch-action": "none",
           "camera-orbit": "0deg 75deg 2.2m",
           "min-camera-orbit": "auto 20deg auto",
           "max-camera-orbit": "auto 160deg auto",
@@ -110,11 +111,6 @@ export default function PublicModelViewer({
                 }}
               >
                 <line
-                  ref={(el) => {
-                    if (el) {
-                      lineRefs.current.set(tag.id, el);
-                    }
-                  }}
                   id={`hs-line-${tag.id}`}
                   x1="0"
                   y1="0"

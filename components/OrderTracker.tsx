@@ -3,47 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import { getOrderStatus, updateOrderTableNumber, type OrderStatus } from "@/lib/menu";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
+import {
+  STEPS,
+  STATUS_COPY as COPY,
+  POLL_MS,
+  SERVED_LINGER_MS,
+  MAX_AGE_MS,
+  type ActiveOrder,
+  isFinalStatus as isFinal,
+  readActiveOrders as read,
+  writeActiveOrders as write,
+  liveActiveOrders,
+} from "@/lib/orderStatus";
 
-const KEY = "lfh_active_orders";
-const POLL_MS = 8000;
-const SERVED_LINGER_MS = 60 * 1000; // served/cancelled strip stays one minute, then goes
-const MAX_AGE_MS = 3 * 60 * 60 * 1000;
-
-interface ActiveOrder {
-  id: string;
-  tableNumber: string;
-  total: number;
-  itemCount: number;
-  items?: { title: string; qty: number }[];
-  status: OrderStatus;
-  placedAt: number;
-  finalizedAt?: number; // when we first saw it served/cancelled
-  dismissed?: boolean;
-}
-
-const STEPS: OrderStatus[] = ["received", "preparing", "served"];
-const COPY: Record<OrderStatus, { label: string; sub: string; icon: string }> = {
-  received: { label: "Order received", sub: "Waiting for the kitchen to confirm…", icon: "fa-receipt" },
-  preparing: { label: "Preparing your order", sub: "The kitchen is on it 👨‍🍳", icon: "fa-fire-burner" },
-  served: { label: "Served — enjoy!", sub: "Bon appétit 🍽️", icon: "fa-utensils" },
-  cancelled: { label: "Order cancelled", sub: "Please ask a member of staff.", icon: "fa-circle-xmark" },
-};
-
-const read = (): ActiveOrder[] => {
-  try {
-    const raw = localStorage.getItem(KEY);
-    const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
-  } catch {
-    return [];
-  }
-};
-const write = (list: ActiveOrder[]) => {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(list));
-  } catch {}
-};
-const isFinal = (s: OrderStatus) => s === "served" || s === "cancelled";
+// Tell the open cart (same tab) that an order's status changed, so its
+// "Live now" section can re-read. The browser's native `storage` event only
+// fires in OTHER tabs, so we need our own in-tab signal.
+const broadcast = () => window.dispatchEvent(new Event("lfh:orders-updated"));
 
 export default function OrderTracker() {
   const [orders, setOrders] = useState<ActiveOrder[]>([]);
@@ -111,6 +87,7 @@ export default function OrderTracker() {
       if (changed && !cancelled) {
         write(list);
         refresh();
+        broadcast();
       }
     };
     poll();
@@ -135,16 +112,10 @@ export default function OrderTracker() {
     write(read().map((o) => (o.id === id ? { ...o, dismissed: true } : o)));
     setDetailOpen(false);
     refresh();
+    broadcast();
   };
 
-  const now = Date.now();
-  const visible = orders
-    .filter((o) => {
-      if (o.dismissed || now - o.placedAt > MAX_AGE_MS) return false;
-      if (isFinal(o.status)) return !!o.finalizedAt && now - o.finalizedAt < SERVED_LINGER_MS;
-      return true;
-    })
-    .sort((a, b) => b.placedAt - a.placedAt);
+  const visible = liveActiveOrders(orders);
   const order = visible[0];
   if (!order) return null;
 
@@ -166,6 +137,7 @@ export default function OrderTracker() {
     if (ok) {
       write(read().map((o) => (o.id === order.id ? { ...o, tableNumber: tableDraft.trim() } : o)));
       refresh();
+      broadcast();
       window.dispatchEvent(
         new CustomEvent("lfh:toast", { detail: { message: "Table number updated ✓" } })
       );
