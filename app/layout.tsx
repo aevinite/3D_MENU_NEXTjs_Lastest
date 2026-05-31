@@ -7,6 +7,7 @@ import OrderTracker from "@/components/OrderTracker";
 import MiniCart from "@/components/MiniCart";
 import CartPanel from "@/components/CartPanel";
 import ToastHost from "@/components/ToastHost";
+import ExitGuard from "@/components/ExitGuard";
 
 export const metadata: Metadata = {
   title: "Little French House - 4D Menu",
@@ -47,6 +48,7 @@ export default function RootLayout({
         <MiniCart />
         <CartPanel />
         <ToastHost />
+        <ExitGuard />
       </body>
     </html>
   );

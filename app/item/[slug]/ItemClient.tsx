@@ -54,6 +54,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
   const [item, setItem] = useState<FoodItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [favorited, setFavorited] = useState(false);
+  const [showFavHint, setShowFavHint] = useState(false); // one-time "tap to save" coachmark
   const [descExpanded, setDescExpanded] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedRating, setSelectedRating] = useState(0);
@@ -69,6 +70,20 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [currency, setCurrencyState] = useState<CurrencyMeta | null>(null);
   const router = useRouter();
+
+  // First-time-only nudge so guests learn the top-right heart saves a dish to
+  // Favorites. Shows briefly, then never again (localStorage flag).
+  useEffect(() => {
+    let seen = true;
+    try { seen = !!localStorage.getItem("lfh-fav-hint-seen"); } catch {}
+    if (seen) return;
+    const show = setTimeout(() => setShowFavHint(true), 700);
+    const hide = setTimeout(() => {
+      setShowFavHint(false);
+      try { localStorage.setItem("lfh-fav-hint-seen", "1"); } catch {}
+    }, 5500);
+    return () => { clearTimeout(show); clearTimeout(hide); };
+  }, []);
 
   useEffect(() => {
     setCurrencyState(getCurrency());
@@ -284,6 +299,9 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
 
   const toggleFavorite = () => {
     if (!item) return;
+    // Any tap on the heart means the hint did its job — retire it for good.
+    if (showFavHint) setShowFavHint(false);
+    try { localStorage.setItem("lfh-fav-hint-seen", "1"); } catch {}
     try {
       let favorites: string[] = [];
       const savedFavorites = localStorage.getItem('lfh-favorites');
@@ -381,6 +399,13 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
           <i className={`${favorited ? 'fas' : 'far'} fa-heart`} style={{ color: favorited ? '#ef4444' : '' }}></i>
         </button>
       </div>
+
+      {showFavHint && (
+        <div className="fav-hint" role="status">
+          <span className="fav-hint-tip" aria-hidden="true"></span>
+          Tap the <i className="fas fa-heart" aria-hidden="true"></i> to save this to your Favorites
+        </div>
+      )}
 
       <div className="detail-visual" onClick={() => setImgZoom(true)} style={{ cursor: 'zoom-in' }}>
         <img

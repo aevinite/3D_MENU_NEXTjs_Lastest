@@ -22,7 +22,7 @@ type FoodItem = MenuItem;
 const SORTS = [
   { slug: "popular", label: "🔥 Popular" },
   { slug: "top-rated", label: "⭐ Top Rated" },
-  { slug: "price", label: "💲 Price" },
+  { slug: "price", label: "💲 Value" },
 ];
 
 // Veg / Non-Veg are FILTERS (show only matching), driven by the dish veg flag.
