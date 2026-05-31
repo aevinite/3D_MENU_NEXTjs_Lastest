@@ -22,7 +22,7 @@ type FoodItem = MenuItem;
 const SORTS = [
   { slug: "popular", label: "🔥 Popular" },
   { slug: "top-rated", label: "⭐ Top Rated" },
-  { slug: "price", label: "💲 Value" },
+  { slug: "price", label: "💲 Low Price" },
 ];
 
 // Veg / Non-Veg are FILTERS (show only matching), driven by the dish veg flag.
@@ -424,13 +424,20 @@ export default function MenuPage() {
             : currentCategory === "favorites" && !q && filteredItems.length === 0
             ? (
                 <div className="fav-empty" role="status">
-                  <div className="fav-empty-heart" aria-hidden="true">
-                    <i className="far fa-heart"></i>
+                  {/* Little how-to: a mock dish card with the heart pinned at its
+                      top-right, so guests can SEE where to tap to favorite. */}
+                  <div className="fav-howto" aria-hidden="true">
+                    <div className="fav-howto-card">
+                      <i className="fas fa-mug-saucer fav-howto-pic"></i>
+                      <span className="fav-howto-heart"><i className="fas fa-heart"></i></span>
+                    </div>
+                    <span className="fav-howto-cue">tap to save</span>
                   </div>
                   <h3 className="fav-empty-title">No favorites yet</h3>
                   <p className="fav-empty-sub">
-                    Tap the <i className="far fa-heart" aria-hidden="true"></i> on any dish to
-                    save it here for next time.
+                    Open any dish, then tap the{" "}
+                    <i className="fas fa-heart" aria-hidden="true"></i> at the{" "}
+                    <b>top-right</b> — it stays saved here for next time.
                   </p>
                 </div>
               )

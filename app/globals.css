@@ -843,14 +843,32 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; padding: 56px 24px; gap: 6px;
 }
-.fav-empty-heart {
-  width: 76px; height: 76px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 30px; color: #e0688a;
+/* "How to favorite" mini illustration: a mock dish card with a heart badge
+   pinned to its top-right, mirroring exactly where the heart sits on a real
+   dish page — so guests learn where to tap. */
+.fav-howto { position: relative; margin-bottom: 18px; }
+.fav-howto-card {
+  position: relative; width: 124px; height: 124px; border-radius: 18px;
+  display: grid; place-items: center;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  margin-bottom: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
 }
+.fav-howto-pic { font-size: 38px; color: color-mix(in srgb, var(--accent) 65%, var(--text)); opacity: 0.85; }
+.fav-howto-heart {
+  position: absolute; top: -13px; right: -13px;
+  width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 19px; color: #e0688a;
+  background: var(--card); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.22);
+  animation: favTapHint 2.2s ease-in-out infinite;
+}
+@keyframes favTapHint { 0%,100% { transform: scale(1); } 50% { transform: scale(1.13); } }
+.fav-howto-cue {
+  position: absolute; top: -2px; right: 50px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 70%, var(--text)); white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) { .fav-howto-heart { animation: none; } }
 .fav-empty-title { font-size: 18px; font-weight: 700; color: var(--text); margin: 0; }
 .fav-empty-sub {
   font-size: 14px; color: var(--muted); margin: 0; max-width: 280px; line-height: 1.5;
@@ -941,8 +959,6 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 .toast-print { animation: toastPrint 0.42s cubic-bezier(0.2,0.8,0.2,1); }
 @keyframes toastPrint { from { opacity: 0; transform: translateY(-14px) scaleY(0.92); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .toast-print { animation: none; } }
-@media (prefers-reduced-motion: reduce) { .fav-empty-heart { animation: none; } }
-@keyframes heartBeat { 0% { transform: scale(1); } 25% { transform: scale(1.3); } 50% { transform: scale(1); } 75% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
 /* --- LIGHT THEME OVERRIDES --- */
 [data-theme="light"] .cat-card:not(.active) {
@@ -962,7 +978,9 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 }
 
 /* --- CART STYLES --- */
-.cart-list { max-height: 50vh; overflow-y: auto; margin-bottom: 24px; padding-right: 8px; }
+/* No separate inner scroller — the whole bill panel scrolls as ONE, so the
+   item list flows straight into the total + Place Order (no double scrollbars). */
+.cart-list { margin-bottom: 24px; }
 .cart-item { 
   display: flex; justify-content: space-between; align-items: center; padding: 14px 0; 
   border-bottom: 1px solid rgba(212,165,116,0.2);
