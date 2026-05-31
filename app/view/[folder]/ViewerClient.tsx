@@ -216,6 +216,9 @@ export default function ViewerClient({ folder }: { folder: string }) {
         cancelAnimationFrame(requestRef.current);
       }
     };
+    // runFullSequence is a stable closure; re-running on its identity would
+    // restart the cinematic on every render. Re-run only on these state deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, error, activeUrl, folder]);
 
   useEffect(() => {
@@ -292,7 +295,7 @@ export default function ViewerClient({ folder }: { folder: string }) {
           let len = 300;
           try {
             len = line.getTotalLength();
-          } catch (e) {}
+          } catch {}
           if (!len || len < 1) len = 300;
           line.style.transition = "none";
           line.style.opacity = "0";
@@ -387,6 +390,8 @@ export default function ViewerClient({ folder }: { folder: string }) {
       target.removeEventListener("click", onTap);
       if (timer) clearTimeout(timer);
     };
+    // runFullSequence is a stable closure (see note above); intentionally omitted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, error, activeUrl]);
 
   if (loading) {

@@ -160,7 +160,6 @@ class ModelLoader {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __lfh_modelLoader: ModelLoader | undefined;
 }
 

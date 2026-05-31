@@ -78,6 +78,8 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
       window.removeEventListener("lfh:cart-updated", onCart);
       window.removeEventListener("lfh:currency-changed", onCur);
     };
+    // syncQty/setCurrencyState are stable; re-run only when the dish changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.id]);
 
   // Dishes with options open the customize popup instead of adding directly.
@@ -133,7 +135,6 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
           {/* Plain <img> (not next/image) on purpose: dish image URLs are
               DB-driven and set in the editor to ANY host, which would crash
               next/image's whitelist. Matches every other image in the app. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className="dish-thumb"
             src={item.image}

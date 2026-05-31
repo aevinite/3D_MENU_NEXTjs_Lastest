@@ -28,7 +28,6 @@ class ModelWatchlist {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __lfh_modelWatchlist: ModelWatchlist | undefined;
 }
 
