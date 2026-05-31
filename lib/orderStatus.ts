@@ -67,3 +67,10 @@ export const liveActiveOrders = (list: ActiveOrder[], now: number = Date.now()):
       return true;
     })
     .sort((a, b) => b.placedAt - a.placedAt);
+
+// True when an order is still cooking (received/preparing) AND its floating
+// strip was hidden (dragged to the cross). That's exactly when we show the red
+// "you still have a live order" dot on the cart icon + Previous-orders tab.
+// If the strip is visible (not hidden), this is false — no dot needed.
+export const hasHiddenLiveOrder = (list: ActiveOrder[], now: number = Date.now()): boolean =>
+  liveActiveOrders(list, now).some((o) => o.stripHidden && !isFinalStatus(o.status));

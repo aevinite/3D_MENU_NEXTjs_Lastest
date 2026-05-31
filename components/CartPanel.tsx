@@ -11,6 +11,7 @@ import {
   type ActiveOrder,
   readActiveOrders,
   liveActiveOrders,
+  isFinalStatus,
 } from "@/lib/orderStatus";
 
 interface CartOption { group: string; label: string; price: number }
@@ -194,6 +195,8 @@ export default function CartPanel() {
   // same order never appears twice in the same tab.
   const liveIds = new Set(liveOrders.map((o) => o.id));
   const pastOrders = history.filter((h) => !liveIds.has(h.id));
+  // Red dot on the Previous-orders tab: a live order whose floating strip was hidden.
+  const hiddenLive = liveOrders.some((o) => o.stripHidden && !isFinalStatus(o.status));
   const subtotal = cart.reduce((sum, it) => sum + parseFloat(it.price) * it.qty, 0);
   const itemCount = cart.reduce((sum, it) => sum + it.qty, 0);
   const tax = subtotal * TAX_RATE;
@@ -346,7 +349,10 @@ export default function CartPanel() {
 
         <div className="cart-tabs">
           <button type="button" className={!showHistory ? "active" : ""} onClick={() => setShowHistory(false)}>Current bill</button>
-          <button type="button" className={showHistory ? "active" : ""} onClick={() => setShowHistory(true)}>Previous orders{liveOrders.length + pastOrders.length ? ` (${liveOrders.length + pastOrders.length})` : ""}</button>
+          <button type="button" className={showHistory ? "active" : ""} onClick={() => setShowHistory(true)}>
+            Previous orders{liveOrders.length + pastOrders.length ? ` (${liveOrders.length + pastOrders.length})` : ""}
+            {hiddenLive && <span className="tab-live-dot" aria-label="Live order in progress" />}
+          </button>
         </div>
 
         {showHistory ? (

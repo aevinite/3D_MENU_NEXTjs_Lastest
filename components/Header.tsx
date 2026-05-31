@@ -12,6 +12,7 @@ import {
   type CurrencyMeta,
   type LanguageMeta,
 } from "@/lib/format";
+import { readActiveOrders, hasHiddenLiveOrder } from "@/lib/orderStatus";
 
 type Theme = "dark" | "light";
 
@@ -25,6 +26,7 @@ export default function Header() {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
   const [cartCount, setCartCount] = useState(0);
+  const [hiddenLive, setHiddenLive] = useState(false); // a live order whose tracker is hidden
   const [currency, setCurrencyState] = useState<CurrencyMeta>(CURRENCIES[0]);
   const [language, setLanguageState] = useState<LanguageMeta>(LANGUAGES[0]);
 
@@ -42,25 +44,39 @@ export default function Header() {
     }
   };
 
+  const loadHiddenLive = () => {
+    try { setHiddenLive(hasHiddenLiveOrder(readActiveOrders())); } catch { setHiddenLive(false); }
+  };
+
   useEffect(() => {
     setMounted(true);
     setTheme(readTheme());
     setCurrencyState(getCurrency());
     setLanguageState(getLanguage());
     loadCartCount();
+    loadHiddenLive();
     const onCart = () => loadCartCount();
     const onTheme = () => setTheme(readTheme());
     const onCurrency = () => setCurrencyState(getCurrency());
     const onLanguage = () => setLanguageState(getLanguage());
+    // Recompute the live-order dot when an order is placed, its status changes,
+    // or it's hidden (OrderTracker broadcasts lfh:orders-updated for all of these).
+    const onOrders = () => loadHiddenLive();
     window.addEventListener("lfh:cart-updated", onCart);
     window.addEventListener("lfh:theme-changed", onTheme);
     window.addEventListener("lfh:currency-changed", onCurrency);
     window.addEventListener("lfh:language-changed", onLanguage);
+    window.addEventListener("lfh:order-placed", onOrders);
+    window.addEventListener("lfh:orders-updated", onOrders);
+    window.addEventListener("storage", onOrders);
     return () => {
       window.removeEventListener("lfh:cart-updated", onCart);
       window.removeEventListener("lfh:theme-changed", onTheme);
       window.removeEventListener("lfh:currency-changed", onCurrency);
       window.removeEventListener("lfh:language-changed", onLanguage);
+      window.removeEventListener("lfh:order-placed", onOrders);
+      window.removeEventListener("lfh:orders-updated", onOrders);
+      window.removeEventListener("storage", onOrders);
     };
   }, []);
 
@@ -136,6 +152,7 @@ export default function Header() {
               {cartCount}
             </span>
           )}
+          {hiddenLive && <span className="cart-live-dot" aria-label="Live order in progress" />}
         </button>
       </div>
     </div>
