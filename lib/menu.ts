@@ -55,14 +55,6 @@ export interface Category {
   active: boolean;
 }
 
-export interface Filter {
-  slug: string;
-  name: LocalizedText;
-  icon?: string;   // emoji or icon
-  sortOrder: number;
-  active: boolean;
-}
-
 // Pick the label for a language, falling back to English, then to whatever
 // exists, so the UI never shows a blank.
 export function localized(text: LocalizedText | undefined, lang: string): string {
@@ -228,19 +220,3 @@ export async function getSettings(): Promise<Settings> {
   };
 }
 
-// Active filter chips, in display order. The virtual "All" chip is added by the UI.
-export async function getFilters(): Promise<Filter[]> {
-  const { data, error } = await supabase
-    .from("filters")
-    .select("*")
-    .eq("active", true)
-    .order("sort_order");
-  if (error) throw new Error(`Failed to load filters: ${error.message}`);
-  return (data ?? []).map((r) => ({
-    slug: r.slug,
-    name: r.name ?? {},
-    icon: r.icon ?? undefined,
-    sortOrder: r.sort_order ?? 0,
-    active: !!r.active,
-  }));
-}

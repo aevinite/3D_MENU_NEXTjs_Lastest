@@ -1,0 +1,38 @@
+feat: favorites view, gallery default + state restore, realtime maintenance, menu polish
+
+Menu (app/menu/page.tsx, FoodCard, globals.css):
+- Gallery is now the default first-visit view.
+- New "Favorites" chip in the category bar: filters to hearted dishes, with an
+  animated empty state when none are saved yet. Menu reads lfh-favorites and
+  updates live (lfh:favorites-updated event + storage).
+- Browse state survives navigate-away + Back: view mode, category, sort, diet,
+  search, and scroll position are all persisted in sessionStorage and restored
+  (previously only category was; view mode reset to the grid every time).
+- Typography: dish name enlarged (15->18 list, 14->16 gallery), price reduced
+  (17->14) so the name reads as primary.
+
+Dish page (ItemClient):
+- "You might also like" is now 5 same-category + 5 related, shuffled to
+  interleave (was 6/4). Broadcasts lfh:favorites-updated on heart toggle.
+
+Realtime sync:
+- AppShell subscribes to Supabase Realtime on the settings row, so maintenance
+  mode + bubbles flip on open guest tabs within ~1s (no manual refresh), with a
+  15s polling fallback if the socket can't connect. Migration 013 adds settings
+  to the supabase_realtime publication (safe: settings already allows anon read).
+- Order-status poll cut 8s -> 3s (orders can't use realtime safely — RLS blocks
+  anon reads by design — so faster polling is the right call there).
+
+Cleanup:
+- Removed dead getFilters()/Filter (the working filter chips stay).
+
+Editor (gitignored, applied locally): cancelled orders show a neutral "Voided"
+pill and hide the pay control (no more "unpaid + greyed" contradiction); freed/
+archived records are now deletable (checkbox + visible trash + "Clear all freed");
+freed cards dim via filter not opacity so their controls stay usable.
+
+Verified in-browser: gallery default, favorites empty + populated (live), back
+restores view+category+scroll, maintenance flips live both ways via realtime,
+3s order poll, editor cancel/free/delete-freed all work, build + types pass.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import FoodCard from "@/components/FoodCard";
@@ -41,15 +41,19 @@ export default function MenuPage() {
   const [currentCategory, setCurrentCategory] = useState("");
   const [currentSort, setCurrentSort] = useState(""); // "" = recommended (menu order)
   const [currentDiet, setCurrentDiet] = useState(""); // "" | "veg" | "non-veg"
-  const [layout, setLayout] = useState("list");
+  const [layout, setLayout] = useState("gallery"); // gallery is the default first-visit view
   const [searchQuery, setSearchQuery] = useState("");
+  const [favorites, setFavorites] = useState<string[]>([]); // dish ids the guest hearted
+  const restoredRef = useRef(false); // skip persisting UI state until after the restore
   // Only show skeletons if loading is actually slow — avoids a flash on fast /
   // cached loads where the data is ready almost immediately.
   const [showSkeleton, setShowSkeleton] = useState(false);
 
-  // Category bar — DB categories plus a curated "Chef's Special" tab (backed by
-  // the chef-special tag, not a real category). One category is ALWAYS selected.
+  // Category bar — a "Favorites" tab first, then the DB categories, plus a curated
+  // "Chef's Special" tab (backed by the chef-special tag, not a real category).
+  // One category is ALWAYS selected.
   const categories = [
+    { slug: "favorites", name: "Favorites", icon: "fa-heart", color: "#ef4444" },
     ...dbCategories.map((c) => ({
       slug: c.slug,
       name: localized(c.name, lang),
@@ -73,6 +77,15 @@ export default function MenuPage() {
   const toggleDiet = (slug: string) =>
     setCurrentDiet((cur) => (cur === slug ? "" : slug));
 
+  // Read the hearted dishes from localStorage (written by the dish detail page).
+  const loadFavorites = () => {
+    try {
+      const raw = localStorage.getItem("lfh-favorites");
+      const parsed = raw ? JSON.parse(raw) : [];
+      setFavorites(Array.isArray(parsed) ? parsed : []);
+    } catch { setFavorites([]); }
+  };
+
   useEffect(() => {
     getMenuItems()
       .then((items) => setMenuData(items))
@@ -87,17 +100,84 @@ export default function MenuPage() {
           saved = sessionStorage.getItem("lfh_menu_cat") || "";
         } catch {}
         const valid =
-          saved === "chef-special" || cats.some((c) => c.slug === saved);
+          saved === "chef-special" || saved === "favorites" || cats.some((c) => c.slug === saved);
         setCurrentCategory((cur) => cur || (valid ? saved : cats[0]?.slug || ""));
       })
       .catch((err) => console.error("Error loading categories:", err));
+
+    // Restore the rest of the browse state so Back from a dish lands you exactly
+    // where you left: view mode, sort, diet, search. (Category is handled above.)
+    try {
+      const sl = sessionStorage.getItem("lfh_menu_layout");
+      if (sl === "list" || sl === "gallery") setLayout(sl);
+      const ss = sessionStorage.getItem("lfh_menu_sort");
+      if (ss !== null) setCurrentSort(ss);
+      const sd = sessionStorage.getItem("lfh_menu_diet");
+      if (sd !== null) setCurrentDiet(sd);
+      const sq = sessionStorage.getItem("lfh_menu_search");
+      if (sq) setSearchQuery(sq);
+    } catch {}
+
+    loadFavorites();
+    // Keep favorites fresh if the guest hearts a dish in another tab/route.
+    const onFav = () => loadFavorites();
+    window.addEventListener("lfh:favorites-updated", onFav);
+    window.addEventListener("storage", onFav);
+    return () => {
+      window.removeEventListener("lfh:favorites-updated", onFav);
+      window.removeEventListener("storage", onFav);
+    };
   }, []);
+
+  // Persist the browse state so it survives a navigate-away + Back. Skip the
+  // first run: on mount these still hold the defaults while the restore (above)
+  // is being applied, so writing now would clobber the saved values with defaults.
+  useEffect(() => {
+    if (!restoredRef.current) { restoredRef.current = true; return; }
+    try {
+      sessionStorage.setItem("lfh_menu_layout", layout);
+      sessionStorage.setItem("lfh_menu_sort", currentSort);
+      sessionStorage.setItem("lfh_menu_diet", currentDiet);
+      sessionStorage.setItem("lfh_menu_search", searchQuery);
+    } catch {}
+  }, [layout, currentSort, currentDiet, searchQuery]);
 
   // If the data hasn't arrived within a moment, reveal the skeleton.
   useEffect(() => {
     const t = setTimeout(() => setShowSkeleton(true), 200);
     return () => clearTimeout(t);
   }, []);
+
+  // Remember how far down the list the guest scrolled, so Back returns them to
+  // the same spot instead of the top. The scroll lives on <main id="main-scroll">.
+  const scrollRestored = useRef(false);
+  useEffect(() => {
+    const el = document.getElementById("main-scroll");
+    if (!el) return;
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        try { sessionStorage.setItem("lfh_menu_scroll", String(el.scrollTop)); } catch {}
+      });
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => { el.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf); };
+  }, []);
+
+  // Restore that scroll position once the list has actually painted.
+  useEffect(() => {
+    if (scrollRestored.current || !menuData.length) return;
+    scrollRestored.current = true;
+    try {
+      const y = parseInt(sessionStorage.getItem("lfh_menu_scroll") || "0", 10);
+      if (y > 0) {
+        const el = document.getElementById("main-scroll");
+        // Two frames: let the cards lay out before we jump.
+        requestAnimationFrame(() => requestAnimationFrame(() => { if (el) el.scrollTop = y; }));
+      }
+    } catch {}
+  }, [menuData]);
 
   // Remember the active category so navigating away and Back returns you here.
   useEffect(() => {
@@ -152,6 +232,8 @@ export default function MenuPage() {
     // ignoring the selected category. Clear the search to fall back to it.
     if (q) {
       if (!matchesSearch(item)) return false;
+    } else if (currentCategory === "favorites") {
+      if (!favorites.includes(item.id)) return false;
     } else if (currentCategory === "chef-special") {
       if (!item.tags.includes("chef-special")) return false;
     } else if (currentCategory && item.category !== currentCategory) {
@@ -339,6 +421,19 @@ export default function MenuPage() {
                     </div>
                   ))
                 : null)
+            : currentCategory === "favorites" && !q && filteredItems.length === 0
+            ? (
+                <div className="fav-empty" role="status">
+                  <div className="fav-empty-heart" aria-hidden="true">
+                    <i className="far fa-heart"></i>
+                  </div>
+                  <h3 className="fav-empty-title">No favorites yet</h3>
+                  <p className="fav-empty-sub">
+                    Tap the <i className="far fa-heart" aria-hidden="true"></i> on any dish to
+                    save it here for next time.
+                  </p>
+                </div>
+              )
             : filteredItems.map((item, index) => (
                 <FoodCard key={item.id} item={item} index={index} viewingCategory={currentCategory} />
               ))}

@@ -260,7 +260,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
   const getRelatedItems = (): FoodItem[] => {
     if (!item || !allItems.length) return [];
     const TOTAL = 10;
-    const SAME_TARGET = 6; // aim ~60% same category, ~40% other — then shuffle
+    const SAME_TARGET = 5; // 5 same-category + 5 related — then shuffle so they interleave
     const rating = (it: FoodItem) => parseFloat(it.rating) || 0;
     const byRating = (a: FoodItem, b: FoodItem) => rating(b) - rating(a);
 
@@ -297,6 +297,8 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
       }
       localStorage.setItem('lfh-favorites', JSON.stringify(favorites));
       setFavorited(!favorited);
+      // Tell the menu's Favorites tab to refresh (same-tab; storage event covers others).
+      window.dispatchEvent(new Event("lfh:favorites-updated"));
     } catch (e) {
       console.error('Failed to update favorites', e);
     }
