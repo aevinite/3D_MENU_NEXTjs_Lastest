@@ -79,7 +79,13 @@ export default function OrderTracker() {
           if (lastStatus.current[o.id] !== res.status) {
             lastStatus.current[o.id] = res.status;
             window.dispatchEvent(
-              new CustomEvent("lfh:toast", { detail: { message: `🔔 ${COPY[res.status].label}` } })
+              new CustomEvent("lfh:toast", { detail: {
+                message: COPY[res.status].label,
+                subtitle: o.tableNumber ? `table ${o.tableNumber}` : "your order",
+                kicker: "order update",
+                variant: res.status === "cancelled" ? "error" : "success",
+                icon: res.status === "cancelled" ? "✕" : "🛎",
+              } })
             );
           }
         }
@@ -139,11 +145,11 @@ export default function OrderTracker() {
       refresh();
       broadcast();
       window.dispatchEvent(
-        new CustomEvent("lfh:toast", { detail: { message: "Table number updated ✓" } })
+        new CustomEvent("lfh:toast", { detail: { message: "Table updated", subtitle: "saved", kicker: "table", variant: "success" } })
       );
     } else {
       window.dispatchEvent(
-        new CustomEvent("lfh:toast", { detail: { message: "Couldn't update — the order may already be served." } })
+        new CustomEvent("lfh:toast", { detail: { message: "Couldn't update table", subtitle: "it may already be served", kicker: "table", variant: "error" } })
       );
     }
   };

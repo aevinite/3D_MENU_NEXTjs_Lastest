@@ -48,11 +48,17 @@ export default function ChefPopup() {
     setSending(true);
     try {
       await callWaiter(check.value, reason);
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: `Sent: ${reason} — someone's on the way! 👨‍🍳` } }));
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: {
+        message: "On our way!",
+        subtitle: `${reason} · staff notified`,
+        kicker: "service",
+        variant: "success",
+        icon: "🛎",
+      } }));
       window.dispatchEvent(new Event("lfh:close-all"));
       setTableNumber("");
     } catch {
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Couldn't reach the staff — please try again." } }));
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Couldn't reach staff", subtitle: "please try again", kicker: "service", variant: "error" } }));
     } finally {
       setSending(false);
     }

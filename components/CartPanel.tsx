@@ -239,7 +239,7 @@ export default function CartPanel() {
     if (idx >= 0) next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
     else next.push({ id: it.id, title: it.title, price: it.price, image: it.image, qty: 1 });
     commit(next);
-    window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: `${it.title} added` } }));
+    window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: `${it.title} added`, kicker: "your order" } }));
   };
 
   const placeOrder = async () => {
@@ -294,13 +294,18 @@ export default function CartPanel() {
         localStorage.setItem("lfh_order_history", JSON.stringify(hist.slice(0, 50)));
         setHistory(hist.slice(0, 50));
       } catch {}
-      const msg = tableTrim ? `Order placed for table ${tableTrim}! 🎉` : "Order placed! 🎉";
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: msg } }));
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: {
+        message: "Order placed",
+        subtitle: tableTrim ? `table ${tableTrim} · sent to kitchen` : "sent to kitchen",
+        kicker: "to the kitchen",
+        icon: "🧾",
+        variant: "success",
+      } }));
       setCart([]); saveCart([]); setTableNumber(""); setDeclared([]); setOtherAllergy(""); setOtherOpen(false);
       window.dispatchEvent(new Event("lfh:cart-updated"));
       window.dispatchEvent(new Event("lfh:close-all"));
     } catch {
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Couldn't place the order — please try again." } }));
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Order didn't go through", subtitle: "please try again", kicker: "order", variant: "error" } }));
     } finally {
       setPlacing(false);
     }

@@ -157,7 +157,7 @@ export default function OrderConfirmModal() {
       if (applyAll && finalRemoved.length) {
         window.dispatchEvent(new CustomEvent("lfh:avoid-all", { detail: { allergens: finalRemoved } }));
       }
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: editSig ? `${item.title} updated` : `${qty} × ${item.title} added` } }));
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: editSig ? `${item.title} updated` : `${qty} × ${item.title} added`, kicker: "your order" } }));
       setOpen(false);
     } catch (e) {
       console.error("Failed to add to cart", e);

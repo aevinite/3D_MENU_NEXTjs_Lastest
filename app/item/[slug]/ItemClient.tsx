@@ -324,7 +324,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
 
   const submitReview = () => {
     if (!reviewName.trim() || !reviewText.trim() || selectedRating === 0) {
-      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Please fill all fields and select a rating!" } }));
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Almost there", subtitle: "add a name, note & rating", kicker: "review", variant: "error" } }));
       return;
     }
     const newReview = {
@@ -336,7 +336,7 @@ export default function ItemClient({ slug, fromCat }: { slug: string; fromCat?: 
     setReviewName("");
     setReviewText("");
     setSelectedRating(0);
-    window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Review submitted!" } }));
+    window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: "Review posted", subtitle: "thanks for sharing", kicker: "review", variant: "success" } }));
   };
 
   // Pick + shuffle once per dish/data change. Computing this during render

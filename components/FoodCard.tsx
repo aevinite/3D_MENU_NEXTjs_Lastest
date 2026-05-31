@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 import type { OptionGroup } from "@/lib/menu";
 import VegIcon from "./VegIcon";
@@ -111,6 +110,10 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
       writeCart([...cart, { id: item.id, title: item.title, price: item.price, image: item.image, qty: newQty, sig: "[]" }]);
     }
     setCartQty(Math.max(0, newQty));
+    // Notify on add (so the toast fires from the menu too, not just the popup).
+    if (delta > 0) {
+      window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message: `${item.title} added`, kicker: "your order" } }));
+    }
   };
 
   const soldOut = (item.tags || []).includes("sold-out");
@@ -127,13 +130,18 @@ export default function FoodCard({ item, index, viewingCategory }: { item: FoodI
         style={{ animationDelay: `${index * 0.06}s` }}
       >
         <div className={`thumb-wrapper ${imgLoaded ? "img-ready" : "img-loading"}`} ref={thumbRef}>
-          <Image
+          {/* Plain <img> (not next/image) on purpose: dish image URLs are
+              DB-driven and set in the editor to ANY host, which would crash
+              next/image's whitelist. Matches every other image in the app. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             className="dish-thumb"
             src={item.image}
             alt={item.title}
             width={110}
             height={110}
-            sizes="(max-width: 600px) 86px, 110px"
+            loading="lazy"
+            decoding="async"
             onLoad={() => setImgLoaded(true)}
           />
           {item.is4d ? (

@@ -49,11 +49,10 @@ export default function MenuPage() {
   // cached loads where the data is ready almost immediately.
   const [showSkeleton, setShowSkeleton] = useState(false);
 
-  // Category bar — a "Favorites" tab first, then the DB categories, plus a curated
-  // "Chef's Special" tab (backed by the chef-special tag, not a real category).
-  // One category is ALWAYS selected.
+  // Category bar — the DB categories, then a curated "Chef's Special" tab
+  // (backed by the chef-special tag, not a real category), and a "Favorites"
+  // tab LAST. One category is ALWAYS selected.
   const categories = [
-    { slug: "favorites", name: "Favorites", icon: "fa-heart", color: "#ef4444" },
     ...dbCategories.map((c) => ({
       slug: c.slug,
       name: localized(c.name, lang),
@@ -61,6 +60,7 @@ export default function MenuPage() {
       color: c.color || "#d4a574",
     })),
     { slug: "chef-special", name: "Chef's Special", icon: "fa-star", color: "#e8b884" },
+    { slug: "favorites", name: "Favorites", icon: "fa-heart", color: "#ef4444" },
   ];
 
   // A category is ALWAYS selected — clicking just switches, never clears.

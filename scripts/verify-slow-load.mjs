@@ -65,21 +65,21 @@ try {
 
   log("\n=== Phase B: wait for slow fetch to complete and toast to appear ===");
   log("  waiting up to 20s for clickable targeted toast...");
-  await page.waitForSelector(".model-toast.model-toast-clickable", {
+  await page.waitForSelector(".toast-ticket.toast-tappable", {
     timeout: 20000,
   });
   const text = await page
-    .locator(".model-toast.model-toast-clickable")
+    .locator(".toast-ticket.toast-tappable")
     .first()
     .innerText();
   log("  toast text:", JSON.stringify(text));
-  if (!/3D is ready/i.test(text)) {
+  if (!/ready to view|in 3D/i.test(text)) {
     verdict = "FAIL";
     findings.push(`Toast text unexpected: ${text}`);
   }
 
   log("\n=== Phase C: clicking the toast navigates to /view/MP ===");
-  await page.click(".model-toast.model-toast-clickable");
+  await page.click(".toast-ticket.toast-tappable");
   await page.waitForURL(/\/view\/MP/, { timeout: 5000 });
   log("  navigated to:", page.url());
 } catch (e) {

@@ -50,7 +50,7 @@ try {
   // view but couldn't see in time. On a clean menu load, the watchlist is
   // empty so no toast should appear.
   await page.waitForTimeout(1000);
-  const toastCount = await page.locator(".model-toast").count();
+  const toastCount = await page.locator(".toast-ticket").count();
   log("  toast count:", toastCount);
   if (toastCount !== 0) {
     verdict = "FAIL";

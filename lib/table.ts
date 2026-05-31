@@ -38,7 +38,7 @@ export function validateTable(raw: string, tableCount: number): TableCheck {
 
 // Toast the message, focus the offending input, and flash its error state.
 export function flagTableInput(inputId: string, message: string) {
-  window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message } }));
+  window.dispatchEvent(new CustomEvent("lfh:toast", { detail: { message, kicker: "table", variant: "error" } }));
   const el = document.getElementById(inputId) as HTMLInputElement | null;
   el?.focus();
   el?.classList.add("table-input-error");
