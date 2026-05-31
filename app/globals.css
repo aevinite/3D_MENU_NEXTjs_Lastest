@@ -892,34 +892,6 @@ html[data-theme="light"], html[data-theme="light"] body { background: #faf3e8; }
 @keyframes favHintIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .fav-hint { animation: none; } }
 
-/* Exit-confirm dialog — the Back-button guard on /menu */
-.exit-overlay {
-  position: fixed; inset: 0; z-index: 7000;
-  display: flex; align-items: center; justify-content: center; padding: 24px;
-  background: rgba(15, 8, 5, 0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  animation: favHintIn .2s ease;
-}
-.exit-box {
-  width: min(360px, 100%); text-align: center; padding: 28px 26px 22px;
-  background: var(--card); color: var(--text); border: var(--border); border-radius: 20px;
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
-  animation: exitPop .26s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.exit-emoji { font-size: 34px; margin-bottom: 10px; }
-.exit-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
-.exit-msg { font-size: 14px; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
-.exit-actions { display: flex; gap: 12px; }
-.exit-actions button {
-  flex: 1; padding: 13px 16px; border-radius: 12px; font-size: 15px; font-weight: 700;
-  cursor: pointer; transition: transform .12s var(--ease), filter .15s var(--ease);
-}
-.exit-actions button:active { transform: translateY(1px); }
-.exit-stay { background: transparent; color: var(--text); border: var(--border); }
-.exit-leave { background: var(--accent-grad); color: #2a1d0c; border: none; }
-.exit-leave:hover { filter: brightness(1.05); }
-@keyframes exitPop { from { opacity: 0; transform: scale(0.94) translateY(8px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .exit-box, .exit-overlay { animation: none; } }
-
 /* ── Notifications: the café "order ticket" (centred, torn top/bottom) ── */
 .toast-stack {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
