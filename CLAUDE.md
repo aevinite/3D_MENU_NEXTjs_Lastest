@@ -87,8 +87,8 @@ via `ToolSearch` BEFORE planning around it.
 - **Light mode works and persists** (`lfh_theme`). The old "Header forces dark /
   light unreachable" note is stale — the theme toggle is live.
 - **Don't re-suggest Draco compression.** Already done. See model-pipeline memory.
-- **Editor runs on port 3004** (`editor/server.js` default; override with `PORT`).
-  Older docs/commits said 3005 — 3004 is what the code actually binds.
+- **Editor runs on port 3005** (`editor/server.js` default; `START.BAT` opens
+  3005). The code default and the launch script now agree on 3005.
 - **Service-role Supabase keys must never be committed or echoed.** If the user
   pastes one in chat, warn them loudly and treat it as compromised.
 - **MCP servers are NOT read from `.claude/settings.json`.** Claude Code loads
