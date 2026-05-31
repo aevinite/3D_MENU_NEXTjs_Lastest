@@ -33,6 +33,9 @@ export interface ActiveOrder {
   placedAt: number;
   finalizedAt?: number; // when we first saw it served/cancelled
   dismissed?: boolean;
+  // Hidden from the floating strip only (dragged onto the cross). The order is
+  // still live: it keeps polling and still shows in the cart's "Live now" list.
+  stripHidden?: boolean;
 }
 
 export const isFinalStatus = (s: OrderStatus) => s === "served" || s === "cancelled";

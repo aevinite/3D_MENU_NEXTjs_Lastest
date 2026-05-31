@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type CSSProperties } from "react";
 import { getOrderStatus, updateOrderTableNumber, type OrderStatus } from "@/lib/menu";
 import { formatPrice, getCurrency, type CurrencyMeta } from "@/lib/format";
 import {
@@ -28,6 +28,12 @@ export default function OrderTracker() {
   const [savingTable, setSavingTable] = useState(false);
   const [currency, setCurrency] = useState<CurrencyMeta | null>(null);
   const lastStatus = useRef<Record<string, OrderStatus>>({});
+  // Drag-to-dismiss: hold the strip, drag it onto the cross target to hide it.
+  const stripRef = useRef<HTMLButtonElement | null>(null);
+  const dragRef = useRef<{ sx: number; sy: number; pid: number; moved: boolean } | null>(null);
+  const [drag, setDrag] = useState<{ dx: number; dy: number; over: boolean } | null>(null);
+  const [snapping, setSnapping] = useState(false);
+  const [dismissing, setDismissing] = useState<{ tx: number; ty: number } | null>(null);
 
   const refresh = () => {
     // Backfill a finalize time for any already-final order missing one (e.g. it was
@@ -114,14 +120,16 @@ export default function OrderTracker() {
     return () => clearTimeout(t);
   }, [orders]);
 
-  const dismiss = (id: string) => {
-    write(read().map((o) => (o.id === id ? { ...o, dismissed: true } : o)));
+  // Hide only the floating strip — the order stays live and visible in the
+  // cart's "Live now" list (it is NOT cancelled or removed).
+  const hideStrip = (id: string) => {
+    write(read().map((o) => (o.id === id ? { ...o, stripHidden: true } : o)));
     setDetailOpen(false);
     refresh();
     broadcast();
   };
 
-  const visible = liveActiveOrders(orders);
+  const visible = liveActiveOrders(orders).filter((o) => !o.stripHidden);
   const order = visible[0];
   if (!order) return null;
 
@@ -154,13 +162,91 @@ export default function OrderTracker() {
     }
   };
 
+  // ── Drag-to-dismiss gesture ──────────────────────────────────────────
+  // Tap = open detail. Press-and-drag = pick the strip up; a cross target
+  // fades in (centred, lower half). Drop on it and the strip flies into the
+  // cross and hides — the order is NOT cancelled, it lives on in the cart's
+  // "Previous orders → Live" list. Works with touch and mouse (pointer events).
+  const CROSS_Y = 0.68; // vertical position of the cross (0=top, 1=bottom)
+  const HIT = 90;       // generous hit radius around the cross
+  const crossXY = () => ({ x: window.innerWidth / 2, y: window.innerHeight * CROSS_Y });
+
+  const onPointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    if (dismissing) return;
+    dragRef.current = { sx: e.clientX, sy: e.clientY, pid: e.pointerId, moved: false };
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current;
+    if (!d || dismissing) return;
+    const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+    if (!d.moved && Math.hypot(dx, dy) < 8) return; // ignore tiny jitters (tap)
+    if (!d.moved) { d.moved = true; try { stripRef.current?.setPointerCapture(d.pid); } catch {} }
+    const { x, y } = crossXY();
+    setDrag({ dx, dy, over: Math.hypot(e.clientX - x, e.clientY - y) < HIT });
+  };
+  const endDrag = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (!d) return;
+    try { stripRef.current?.releasePointerCapture(e.pointerId); } catch {}
+    if (!d.moved) { openDetail(); return; } // it was a tap
+    const { x, y } = crossXY();
+    if (Math.hypot(e.clientX - x, e.clientY - y) < HIT) {
+      // dropped on the cross → fly into it, then hide
+      const r = stripRef.current?.getBoundingClientRect();
+      const tx = r ? x - (r.left + r.width / 2) : 0;
+      const ty = r ? y - (r.top + r.height / 2) : 0;
+      const id = order.id;
+      setDrag(null);
+      setDismissing({ tx, ty });
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("lfh:toast", { detail: {
+          message: "Tracker hidden", subtitle: "still in Previous orders",
+          kicker: "order update", icon: "🧾", variant: "success",
+        } }));
+        hideStrip(id);
+        setDismissing(null);
+      }, 340);
+    } else {
+      // released away from the cross → spring back into place
+      setSnapping(true);
+      setDrag({ dx: 0, dy: 0, over: false });
+      setTimeout(() => { setSnapping(false); setDrag(null); }, 260);
+    }
+  };
+  const onPointerCancel = () => { dragRef.current = null; setSnapping(false); setDrag(null); };
+
+  // NOTE: `animation: none` is required on the active branches — the strip's
+  // otRise entrance animation uses fill-mode:both, and a running/filled CSS
+  // animation overrides an inline transform, which would pin the strip in place.
+  const stripStyle: CSSProperties = dismissing
+    ? { transform: `translate(${dismissing.tx}px, ${dismissing.ty}px) scale(0.15)`, opacity: 0, transition: "transform .34s cubic-bezier(.4,0,.2,1), opacity .34s ease", animation: "none", zIndex: 80, pointerEvents: "none", touchAction: "none" }
+    : snapping
+    ? { transform: "translate(0px, 0px)", transition: "transform .26s cubic-bezier(.22,1,.36,1)", animation: "none", zIndex: 80, touchAction: "none" }
+    : drag
+    ? { transform: `translate(${drag.dx}px, ${drag.dy}px) scale(${drag.over ? 0.9 : 1})`, transition: "none", animation: "none", zIndex: 80, cursor: "grabbing", touchAction: "none" }
+    : { touchAction: "none" };
+
   return (
     <>
+      {drag && (
+        <div className={`ot-dropzone ${drag.over ? "over" : ""}`} aria-hidden="true">
+          <div className="ot-dropzone-circle"><i className="fas fa-times"></i></div>
+          <span className="ot-dropzone-label">{drag.over ? "Release to hide" : "Drop here to hide"}</span>
+        </div>
+      )}
+
       <button
         type="button"
+        ref={stripRef}
         className={`order-tracker status-${order.status}`}
-        onClick={openDetail}
-        aria-label="View order status"
+        style={stripStyle}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={onPointerCancel}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(); } }}
+        aria-label="Order status — tap to view, drag onto the cross to hide"
       >
         <div className="ot-icon" aria-hidden="true">
           <i className={`fas ${c.icon}`}></i>
@@ -179,17 +265,7 @@ export default function OrderTracker() {
             </div>
           )}
         </div>
-        <span
-          className="ot-close"
-          role="button"
-          aria-label="Dismiss"
-          onClick={(e) => {
-            e.stopPropagation();
-            dismiss(order.id);
-          }}
-        >
-          <i className="fas fa-times"></i>
-        </span>
+        <span className="ot-grip" aria-hidden="true"><i className="fas fa-grip-lines"></i></span>
       </button>
 
       {detailOpen && (
@@ -260,6 +336,10 @@ export default function OrderTracker() {
                   : "This order is already served, so the table number is locked."}
               </p>
             </div>
+
+            <button type="button" className="ot-hide-link" onClick={() => hideStrip(order.id)}>
+              Hide this tracker — it stays in Previous orders
+            </button>
           </div>
         </>
       )}

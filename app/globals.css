@@ -2729,13 +2729,43 @@ a:focus:not(:focus-visible) { outline: none; }
 .ot-step.done { background: var(--ot-accent); }
 .ot-step.active { animation: otStep 1.4s ease-in-out infinite; }
 @keyframes otStep { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
-.ot-close {
-  flex: 0 0 auto; background: rgba(245,236,221,0.12); border: none; color: #f5ecdd;
-  cursor: pointer; font-size: 14px; padding: 0; line-height: 1; align-self: flex-start;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 50%;
+/* Grip hint — shows the strip can be picked up and dragged away to hide it. */
+.ot-grip {
+  flex: 0 0 auto; align-self: center; color: rgba(245,236,221,0.4);
+  font-size: 13px; padding: 4px 2px; line-height: 1;
 }
-.ot-close:hover { background: rgba(245,236,221,0.22); color: #fff; }
+.order-tracker { touch-action: none; } /* let the strip be dragged without scrolling the page */
+
+/* Drag-to-hide drop target: a cross that appears, centred in the lower half. */
+.ot-dropzone {
+  position: fixed; left: 50%; top: 68%; transform: translate(-50%, -50%);
+  z-index: 75; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  pointer-events: none; animation: otDropIn .2s ease;
+}
+.ot-dropzone-circle {
+  width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 30px; color: #f5ecdd; background: rgba(20,17,13,0.72);
+  border: 2px dashed rgba(245,236,221,0.5);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+}
+.ot-dropzone.over .ot-dropzone-circle {
+  transform: scale(1.18); background: rgba(239,68,68,0.92);
+  border-color: #fff; border-style: solid; color: #fff;
+}
+.ot-dropzone-label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: #f5ecdd;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.55);
+}
+@keyframes otDropIn { from { opacity: 0; transform: translate(-50%, -40%) scale(0.82); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .ot-dropzone { animation: none; } }
+
+/* Keyboard / non-touch fallback inside the detail sheet. */
+.ot-hide-link {
+  background: none; border: none; color: var(--muted); font-size: 12px;
+  text-decoration: underline; cursor: pointer; margin-top: 14px; align-self: center;
+}
+.ot-hide-link:hover { color: var(--text); }
 
 /* sticky mini-cart — a compact centred pill on desktop, a full-width bar on phones */
 .mini-cart {
