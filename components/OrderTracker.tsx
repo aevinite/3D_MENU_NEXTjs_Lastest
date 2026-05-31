@@ -34,6 +34,9 @@ export default function OrderTracker() {
   const [drag, setDrag] = useState<{ dx: number; dy: number; over: boolean } | null>(null);
   const [snapping, setSnapping] = useState(false);
   const [dismissing, setDismissing] = useState<{ tx: number; ty: number } | null>(null);
+  // The order being animated into the cross — frozen so a newly-arrived order
+  // can't swap into the strip mid-animation and play the fly-out on the wrong one.
+  const dismissingOrderRef = useRef<ActiveOrder | null>(null);
 
   const refresh = () => {
     // Backfill a finalize time for any already-final order missing one (e.g. it was
@@ -130,7 +133,8 @@ export default function OrderTracker() {
   };
 
   const visible = liveActiveOrders(orders).filter((o) => !o.stripHidden);
-  const order = visible[0];
+  // While dismissing, keep showing the SAME order that's flying into the cross.
+  const order = (dismissing && dismissingOrderRef.current) || visible[0];
   if (!order) return null;
 
   const c = COPY[order.status];
@@ -174,13 +178,16 @@ export default function OrderTracker() {
   const onPointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
     if (dismissing) return;
     dragRef.current = { sx: e.clientX, sy: e.clientY, pid: e.pointerId, moved: false };
+    // Capture immediately so a fast flick that leaves the small strip still
+    // delivers move/up here (and so a stray pointerdown can't wedge dragRef).
+    try { stripRef.current?.setPointerCapture(e.pointerId); } catch {}
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLButtonElement>) => {
     const d = dragRef.current;
     if (!d || dismissing) return;
     const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
     if (!d.moved && Math.hypot(dx, dy) < 8) return; // ignore tiny jitters (tap)
-    if (!d.moved) { d.moved = true; try { stripRef.current?.setPointerCapture(d.pid); } catch {} }
+    if (!d.moved) d.moved = true;
     const { x, y } = crossXY();
     setDrag({ dx, dy, over: Math.hypot(e.clientX - x, e.clientY - y) < HIT });
   };
@@ -197,6 +204,7 @@ export default function OrderTracker() {
       const tx = r ? x - (r.left + r.width / 2) : 0;
       const ty = r ? y - (r.top + r.height / 2) : 0;
       const id = order.id;
+      dismissingOrderRef.current = order; // freeze the strip we're animating out
       setDrag(null);
       setDismissing({ tx, ty });
       setTimeout(() => {
@@ -206,6 +214,7 @@ export default function OrderTracker() {
         } }));
         hideStrip(id);
         setDismissing(null);
+        dismissingOrderRef.current = null;
       }, 340);
     } else {
       // released away from the cross → spring back into place
@@ -214,7 +223,12 @@ export default function OrderTracker() {
       setTimeout(() => { setSnapping(false); setDrag(null); }, 260);
     }
   };
-  const onPointerCancel = () => { dragRef.current = null; setSnapping(false); setDrag(null); };
+  const onPointerCancel = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    dragRef.current = null;
+    try { stripRef.current?.releasePointerCapture(e.pointerId); } catch {}
+    setSnapping(false);
+    setDrag(null);
+  };
 
   // NOTE: `animation: none` is required on the active branches — the strip's
   // otRise entrance animation uses fill-mode:both, and a running/filled CSS
